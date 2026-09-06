@@ -80,10 +80,18 @@ cmd_start() {
   local -a runner_cmd
   runner_cmd=("$VENV_PY" "$RUNNER" "--profile" "$profile" "--entry-timeout-min" "$entry_timeout_min" "--poll-sec" "$poll_sec" "--close-retry-max" "$close_retry_max" "--close-retry-delay-sec" "$close_retry_delay_sec")
   if [[ "$live" -eq 1 ]]; then
+    if [[ "${PMM_LIVE_OK:-}" != "1" ]]; then
+      echo "refusing --live/--execute: set PMM_LIVE_OK=1 after Ledger/human desk gate."
+      exit 3
+    fi
+    if [[ ! -f "$ENV_FILE" ]]; then
+      echo "refusing live: missing env file $ENV_FILE (copy .env.example to .env and fill creds)."
+      exit 3
+    fi
     runner_cmd+=("--execute")
-    echo "WARNING: LIVE mode (--execute). Patpat-MakeMoney desk gate required."
+    echo "WARNING: LIVE mode (--execute). PMM_LIVE_OK=1 set. Desk gate assumed."
   else
-    echo "mode=dry-run (paper). Pass --live to execute real orders."
+    echo "mode=dry-run (paper). Pass --live with PMM_LIVE_OK=1 to execute real orders."
   fi
   [[ -n "$stake_usd" ]] && runner_cmd+=("--stake-usd" "$stake_usd")
   [[ -n "$threshold" ]] && runner_cmd+=("--threshold" "$threshold")

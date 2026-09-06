@@ -16,7 +16,8 @@ Specialists report to Ledger. This repo is a tool under the Head, not a signal b
 2. Ledger desk read (bias · levels · matters vs noise · news↔chart · invalidation · confidence)
 3. Optional skill **dry-run** (`--profile desk`, no `--execute`)
 4. Human go-ahead
-5. Live `--execute` only if still valid
+5. Live only if still valid: `PMM_LIVE_OK=1` + `--live`/`--execute` + `.env` creds
+6. Preflight: `python scripts/pmm_live_preflight.py`
 6. Process stop ready: `scripts/btc5m_ctl.sh stop` (does not cancel orders or close positions).
 
 ## Ledger session brief (paste template)

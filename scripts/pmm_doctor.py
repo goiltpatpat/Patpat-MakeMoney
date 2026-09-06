@@ -99,6 +99,10 @@ def main() -> int:
             ok("ctl documents/accepts --live for opt-in execute")
         else:
             bad("ctl missing --live opt-in")
+        if "PMM_LIVE_OK" in text:
+            ok("ctl requires PMM_LIVE_OK for live")
+        else:
+            bad("ctl missing PMM_LIVE_OK live gate")
         if 'profile="desk"' in text:
             ok("ctl default profile is desk")
         else:

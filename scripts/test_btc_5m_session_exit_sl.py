@@ -8,6 +8,8 @@ import time
 from typing import Any, Optional
 from pathlib import Path
 
+import pmm_live_guard
+
 import requests
 
 from pmm_gates import (
@@ -237,10 +239,7 @@ def run_open(repo: str, slug: str, side: str, stake: float, execute: bool) -> tu
     ]
     if execute:
         cmd.append('--execute')
-    env = os.environ.copy()
-    env.setdefault('PM_MAX_SPREAD', '1')
-    env.setdefault('PM_MIN_TOP_ASK_NOTIONAL_USD', '0')
-    env.setdefault('PM_ORDER_TYPE', 'FAK')
+    env = pmm_live_guard.open_exec_env()
     p = subprocess.run(cmd, cwd=repo, capture_output=True, text=True, env=env)
     out = (p.stdout or '') + '\n' + (p.stderr or '')
     return out, parse_json_objects(out)
@@ -301,6 +300,8 @@ PROFILES: dict[str, dict[str, Any]] = {
         'btc_move_usd_min': 70.0,
         'btc_move_usd_max_reference': 100.0,
         'require_skew_align': True,
+        'max_trades_per_day': 12,
+        'daily_max_loss_usdc': 10.0,
     },
     'aggressive': {
         'threshold': 0.70,
@@ -315,6 +316,8 @@ PROFILES: dict[str, dict[str, Any]] = {
         'btc_move_usd_min': 70.0,
         'btc_move_usd_max_reference': 100.0,
         'require_skew_align': True,
+        'max_trades_per_day': 20,
+        'daily_max_loss_usdc': 15.0,
     },
     # Patpat-MakeMoney desk default — tighter stake/stop; paper-first via missing --execute
     'desk': {
@@ -330,6 +333,8 @@ PROFILES: dict[str, dict[str, Any]] = {
         'btc_move_usd_min': 80.0,
         'btc_move_usd_max_reference': 100.0,
         'require_skew_align': True,
+        'max_trades_per_day': 8,
+        'daily_max_loss_usdc': 6.0,
     },
 }
 
@@ -361,6 +366,10 @@ def apply_profile(args: argparse.Namespace) -> argparse.Namespace:
         args.btc_move_usd_max_reference = float(prof.get('btc_move_usd_max_reference', 100.0))
     if getattr(args, 'require_skew_align', None) is None:
         args.require_skew_align = bool(prof.get('require_skew_align', True))
+    if getattr(args, 'max_trades_per_day', None) is None:
+        args.max_trades_per_day = int(prof.get('max_trades_per_day', 8))
+    if getattr(args, 'daily_max_loss_usdc', None) is None:
+        args.daily_max_loss_usdc = float(prof.get('daily_max_loss_usdc', 6.0))
     return args
 
 
@@ -395,6 +404,7 @@ def main():
     ap.add_argument('--btc-move-usd-min', dest='btc_move_usd_min', type=float, default=None)
     ap.add_argument('--btc-move-usd-max-ref', dest='btc_move_usd_max_reference', type=float, default=None)
     args = apply_profile(ap.parse_args())
+    pmm_live_guard.require_live_ok(bool(args.execute))
     if args.enable_gates:
         args.impulse_enabled = True
         args.skew_enabled = True
@@ -588,6 +598,21 @@ def main():
                     time.sleep(args.poll_sec)
                     continue
 
+            if args.execute:
+                ok_day, day_status, day_st = pmm_live_guard.can_open_live(
+                    int(args.max_trades_per_day),
+                    float(args.daily_max_loss_usdc),
+                    root=Path(args.repo),
+                )
+                if not ok_day:
+                    report['attempts'].append({
+                        'ts': ts_utc(),
+                        'slug': slug,
+                        'status': day_status,
+                        'day_state': day_st,
+                    })
+                    time.sleep(args.poll_sec)
+                    continue
             out, objs = run_open(args.repo, slug, side, args.stake_usd, args.execute)
             post = None
             runner = None
@@ -627,6 +652,8 @@ def main():
         return
 
     report['opened'] = opened
+    if args.execute:
+        pmm_live_guard.record_live_trade(root=Path(args.repo))
 
     # monitor after open: stop-loss or time exit
     end_ts = None
@@ -658,7 +685,7 @@ def main():
     out = ''
     fallback_used = None
     force_close_used = None
-    client = auth_clob_client()
+    client = auth_clob_client() if args.execute else None
 
     for i in range(max(1, int(args.close_retry_max))):
         out, objs = run_close(
@@ -744,7 +771,11 @@ def main():
                     close_obj['order_post_result'] = post2
                     break
 
-                cancel_info = cancel_token_orders(client, opened['token_id'])
+                cancel_info = None
+                if args.execute:
+                    cancel_info = cancel_token_orders(client, opened['token_id'])
+                else:
+                    cancel_info = {'skipped': 'paper_no_cancel'}
                 bb2 = None
                 try:
                     bb2 = clob_best_bid(opened['token_id'])
@@ -755,6 +786,7 @@ def main():
                     'type': 'FORCE_GTC_LIMIT',
                     'price': force_px,
                     'cancel_info': cancel_info,
+                    'execute': bool(args.execute),
                 }
                 out3, objs3 = run_close(
                     args.repo,
@@ -809,6 +841,10 @@ def main():
     if closed['close_usdc']:
         pnl = round(closed['close_usdc'] - opened['cost_usdc'], 6)
     report['realized_cashflow_pnl_usdc'] = pnl
+    if args.execute and pnl is not None:
+        st = pmm_live_guard.load_day_state(Path(args.repo))
+        st['realized_pnl_usdc'] = float(st.get('realized_pnl_usdc') or 0.0) + float(pnl)
+        pmm_live_guard.save_day_state(st, Path(args.repo))
     report['finished_at'] = ts_utc()
     report['result'] = 'done'
 

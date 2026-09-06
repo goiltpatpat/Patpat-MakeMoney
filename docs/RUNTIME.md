@@ -26,6 +26,14 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 - With impulse on: require `impulse_dir == skew_side == entry_side`
 - Anti-impulse threshold-only candidates → `skip_threshold_anti_impulse_only`
 
+## Live isolation
+- `--execute` / ctl `--live` require `PMM_LIVE_OK=1`
+- ctl live also requires `.env` present
+- Authenticated cancel only when `execute=True`
+- Open path forces desk-tight `PM_MAX_SPREAD=0.03` and `PM_MIN_TOP_ASK_NOTIONAL_USD=30`
+- Live day caps via profile `max_trades_per_day` + `daily_max_loss_usdc` (`runtime/desk_day_*.json`)
+- Preflight: `scripts/pmm_live_preflight.py`
+
 ## Paper-first control paths
 - Team entry: `scripts/pmm_ctl.sh` → `btc5m_ctl.sh start` (dry unless `--live|--execute`)
 - Execution root: this repository (optional `BTC5M_REPO` override)

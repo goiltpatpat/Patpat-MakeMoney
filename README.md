@@ -137,7 +137,8 @@ python scripts/test_btc_5m_session_exit_sl.py --profile desk --enable-gates --ex
 - Offline prove: `python scripts/pmm_doctor.py` and `python -m unittest discover -s tests -v`
 - Optional gates paper: add `--enable-gates` on the skill runner
 
-**Not ready for live** until explicit human/Ledger go-ahead (`--live` / `--execute`), credentials in `.env`, and force-close safety review.
+**Live path (opt-in):** fill `.env` → `python scripts/pmm_live_preflight.py` → `PMM_LIVE_OK=1` → `scripts/pmm_ctl.sh start --profile desk --live`.
+Open guards are desk-tight; cancel-on-force-close is execute-gated. `stop` kills process only.
 
 ## Risk notice
 
