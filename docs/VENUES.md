@@ -2,6 +2,8 @@
 
 Thai-geo desk notes. English docs/code. **Paper-first. No tips. No invented PnL.**
 
+API inventory: **`docs/APIS.md`**. Experimental holes: **`docs/HOLES.md`**.
+
 ## Geo / regulatory posture (TH)
 
 | Venue | Role (Phase 1) | Notes |
@@ -24,7 +26,7 @@ Scanner only — **no live orders, no auto-transfer arb execution.**
    - `transfer_time_penalty_bps` — **labeled ESTIMATE** (deposit latency buffer; non-zero default; not a measured fact)
    - `travel_rule_buffer_bps` — **labeled ESTIMATE** (Travel Rule / KYC friction; non-zero default)
    - `net_edge_bps` after all costs
-3. **Kill rules:** kill if `net_edge_bps <= 0` or `unit_mismatch`.
+3. **Kill rules:** kill if `net_edge_bps <= 0`, `unit_mismatch`, or **money-leg `source=fixture`** (unless `--allow-fixture` / `PMM_ARB_ALLOW_FIXTURE` — offline tests only; never claim net>0 from fixture on the money path). See `docs/HOLES.md`.
 4. **FX honesty:** refuse inventing USDTHB. Cross-currency (e.g. WBTC-USD vs BTCTHB) = `unit_mismatch` unless a **labeled** public FX quote is supplied (reuse `divergence.py` helpers / `--usdthb`).
 5. **Paper stub (optional):** simulate fills on both legs **without** sending orders; edge_log venue tags `dex_paper` / `binance_th_paper`.
 6. **Falsify first:** paper scan must survive fee + latency + Travel Rule buffers before any future live discussion.
@@ -89,7 +91,7 @@ python scripts/pmm_bitkub_paper.py --symbol BTC_THB --stake-thb 100
 
 # DEX→CEX arb SCAN (Binance TH CEX leg; labeled FX for USD vs THB)
 python scripts/pmm_arb_scan.py --paper --cex binance_th --usdthb 36.0 --usdthb-source desk_labeled
-python scripts/pmm_arb_scan.py --paper --fixture --usdthb 36.0 --simulate-paper-fills
+python scripts/pmm_arb_scan.py --paper --fixture --allow-fixture --usdthb 36.0 --simulate-paper-fills
 # --live is hard-refused (exit 2)
 
 # Log paper fills for expectancy falsify (no invented PnL)
@@ -128,7 +130,7 @@ python -m unittest discover -s tests -v
 python scripts/pmm_tape.py --btc
 python scripts/pmm_tape.py --all --divergence
 python scripts/pmm_bitkub_paper.py --stake-thb 50 --no-record
-python scripts/pmm_arb_scan.py --paper --fixture --usdthb 36.0 --usdthb-source prove
+python scripts/pmm_arb_scan.py --paper --fixture --allow-fixture --usdthb 36.0 --usdthb-source prove
 python scripts/pmm_edge_scorecard.py
 python scripts/pmm_paper_reconcile.py --preview
 ```

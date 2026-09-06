@@ -87,7 +87,7 @@ class BinanceTHTapeTests(unittest.TestCase):
         q = bnth_tape.ticker_to_tape_quote(row)
         self.assertEqual(q.venue, "binance_th")
         self.assertGreater(q.price, 0)
-        self.assertEqual(q.source, "binance_th_ticker_price")
+        self.assertEqual(q.source, "fixture")
 
     def test_fetch_price_mocked_th_host_only(self):
         routes = {
@@ -157,7 +157,8 @@ class DexCexArbTests(unittest.TestCase):
             travel_rule_buffer_bps=5,
         )
         # gross buy_dex_sell_cex = 100 bps; cost = 30; net = 70
-        out = detect_dex_cex_opportunity(dex, cex, fees=fees)
+        # source=fixture requires allow_fixture for offline scoring
+        out = detect_dex_cex_opportunity(dex, cex, fees=fees, allow_fixture=True)
         self.assertFalse(out["kill"])
         self.assertEqual(out["status"], "opportunity")
         self.assertAlmostEqual(out["gross_spread_bps"], 100.0, places=4)
@@ -249,12 +250,14 @@ class ArbScanCliTests(unittest.TestCase):
                 [
                     "--paper",
                     "--fixture",
+                    "--allow-fixture",
                     "--cex",
                     "binance_th",
                     "--usdthb",
                     "36.0",
                     "--usdthb-source",
                     "test",
+                    "--no-fetch-usdthb",
                     "--transfer-time-penalty-bps",
                     "15",
                     "--travel-rule-buffer-bps",

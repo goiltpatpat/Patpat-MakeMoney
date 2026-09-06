@@ -66,6 +66,7 @@ def fixture_ticker_row(symbol: str = DEFAULT_SYMBOL) -> dict[str, Any]:
     sym = _normalize_symbol(symbol)
     row = dict(FIXTURE_BTCTHB)
     row["symbol"] = sym
+    row["_fixture"] = True
     return row
 
 
@@ -199,13 +200,47 @@ def ticker_to_tape_quote(row: dict[str, Any], symbol: str = DEFAULT_SYMBOL) -> T
             last = (bid + ask) / 2.0
         else:
             raise BinanceTHError(f"cannot derive mid from ticker: {row!r}")
+    source = "fixture" if row.get("_fixture") else "binance_th_ticker_price"
     return TapeQuote(
         venue="binance_th",
         symbol=sym,
         price=float(last),
         ts=_utc_now_iso(),
-        source="binance_th_ticker_price",
+        source=source,
     )
+
+
+
+
+def fetch_usdtthb_fx(
+    *,
+    timeout: float = DEFAULT_TIMEOUT,
+    use_fixture: Optional[bool] = None,
+) -> dict[str, Any]:
+    """
+    Labeled USDTHB / USDTTHB from api.binance.th public ticker only.
+
+    Returns THB per 1 USDT (desk treats as USDTHB label). Never invents FX.
+    """
+    row = fetch_public_ticker("USDTTHB", timeout=timeout, use_fixture=use_fixture)
+    px = _float_field(row, "lastPrice", "price")
+    if px is None or px <= 0:
+        raise BinanceTHError(f"bad USDTTHB price: {row!r}")
+    is_fix = bool(row.get("_fixture"))
+    return {
+        "price": float(px),
+        "pair": "USDTTHB",
+        "symbol": "USDTTHB",
+        "source": "fixture" if is_fix else "binance_th_usdtthb",
+        "host": BINANCE_TH_API_BASE,
+        "docs": DOCS_URL,
+        "ts": _utc_now_iso(),
+        "fixture": is_fix,
+        "note": (
+            "labeled public FX from api.binance.th USDTTHB — not invented; "
+            "USDT≈USD for desk USDTHB label"
+        ),
+    }
 
 
 def unavailable_status(*, reason: str = "public API unreachable") -> dict[str, Any]:
