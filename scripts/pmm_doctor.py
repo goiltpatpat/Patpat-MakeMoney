@@ -150,6 +150,28 @@ def main() -> int:
         else:
             bad("watch still looks live-hardcoded")
 
+    gates = ROOT / "scripts" / "pmm_gates.py"
+    if gates.exists():
+        ok("scripts/pmm_gates.py present")
+    else:
+        bad("missing scripts/pmm_gates.py")
+
+    runner = ROOT / "scripts" / "test_btc_5m_session_exit_sl.py"
+    if runner.exists():
+        rt = runner.read_text(encoding="utf-8")
+        if "'impulse_enabled': False" in rt or '"impulse_enabled": False' in rt or "impulse_enabled': False" in rt:
+            ok("runner profiles default impulse_enabled False")
+        else:
+            # also accept False in desk block
+            if "impulse_enabled': False" in rt or "impulse_enabled: False" in rt:
+                ok("runner profiles default impulse_enabled False")
+            else:
+                bad("runner missing impulse_enabled False defaults")
+        if "--enable-gates" in rt:
+            ok("runner exposes --enable-gates")
+        else:
+            bad("runner missing --enable-gates")
+
     print("---")
     print(f"passed={len(PASSES)} failed={len(FAILS)}")
     return 1 if FAILS else 0

@@ -11,6 +11,18 @@ strategy_reference:
   skew_bias_note: "Prefer direction supported by market skew when momentum is already established."
   sizing_note: "Typical discretionary sizing can be up to ~50% of allocated trading balance; tune risk per user preference."
   optional_hedge_note: "When skew is extreme (for example >=95/5), allow a small opposite hedge to reduce last-second reversal risk."
+  gates:
+    impulse_enabled_default: false
+    skew_enabled_default: false
+    desk_btc_move_usd_min: 80
+    conservative_btc_move_usd_min: 70
+    aggressive_btc_move_usd_min: 70
+    btc_move_usd_max_reference: 100
+    max_reference_is_hard_reject: false
+    require_skew_align: true
+    btc_feed_primary: "binance_btcusdt"
+    fail_closed: true
+    enable_cli: "--enable-gates | --impulse-gate | --skew-gate"
 
 shared_rules:
   market_validation:
@@ -127,3 +139,4 @@ notes:
   - "Entry behavior today: continuous CLOB ask monitoring; if UP/DOWN >= threshold, enter on stronger side."
   - "Planned: hard-gate impulse + skew (Patpat-MakeMoney desk) after docs alignment."
   - "Patpat-MakeMoney default desk profile: prefer --profile desk; dry-run unless --execute after Ledger gate."
+  - "Gates default OFF; enable with --enable-gates (or --impulse-gate / --skew-gate). Fail-closed on feed errors."
