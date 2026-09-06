@@ -1,6 +1,6 @@
 # Patpat-MakeMoney · BTC 5m Polymarket
 
-**Team fork** of [Novals83/5min-btc-polymarket](https://github.com/Novals83/5min-btc-polymarket) for the **Patpat-MakeMoney** desk.
+**Independent Patpat-MakeMoney desk repo** (derived from [Novals83/5min-btc-polymarket](https://github.com/Novals83/5min-btc-polymarket); not a GitHub fork).
 
 Owned by: [`goiltpatpat/Patpat-MakeMoney`](https://github.com/goiltpatpat/Patpat-MakeMoney)  
 Workspace: `C:\Users\peat_\Desktop\Patpat-MakeMoney`
@@ -124,4 +124,4 @@ No promised returns. No auto-live trading without explicit human go-ahead.
 
 ## Attribution
 
-Upstream: [Novals83/5min-btc-polymarket](https://github.com/Novals83/5min-btc-polymarket) — thank you to the original authors.
+See [NOTICE.md](NOTICE.md). Inspired by / originally derived from [Novals83/5min-btc-polymarket](https://github.com/Novals83/5min-btc-polymarket). This repository is independent team property of Patpat-MakeMoney.
