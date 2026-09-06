@@ -105,3 +105,12 @@ Falsifiable screens — **not tipster**. See also `DESK.md` / `docs/HOLES.md`.
 3. **Desk scorecard cadence** — `pmm_edge_scorecard.py` on `edge_log.jsonl` only; N fills, mean realized from logged fields; day-cap stops from state file.
 
 All three stay paper/read-only until Thesis pass criteria are met.
+
+### LST basis (Marinade / jitoSOL vs Jupiter)
+
+- Marinade fair: `GET https://api.marinade.finance/msol/price_sol` (SOL per mSOL; no APY endpoints).
+- jitoSOL fair: public RPC `getAccountInfo` on stake pool `Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb` → `totalLamports/poolTokenSupply`.
+- Jupiter: `GET https://api.jup.ag/swap/v2/order` LST→SOL, omit `taker` (quote-only).
+- CLI: `scripts/pmm_lst_basis_scan.py` (`--live` refuse; fixture-kill; labeled ESTIMATE bps).
+- Mints: mSOL `mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So`, jitoSOL `J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn`.
+
