@@ -278,6 +278,41 @@ def main() -> int:
         else:
             bad("pmm_edge_log missing edge_log.jsonl / no-invented note")
 
+
+    scorecard = ROOT / "scripts" / "pmm_edge_scorecard.py"
+    reconcile = ROOT / "scripts" / "pmm_paper_reconcile.py"
+    divergence = ROOT / "src" / "venues" / "divergence.py"
+    for path, label in (
+        (scorecard, "scripts/pmm_edge_scorecard.py"),
+        (reconcile, "scripts/pmm_paper_reconcile.py"),
+        (divergence, "src/venues/divergence.py"),
+    ):
+        if path.exists():
+            ok(f"{label} present")
+        else:
+            bad(f"missing {label}")
+
+    if scorecard.exists():
+        st = scorecard.read_text(encoding="utf-8")
+        if "realized_pnl_thb" in st and "invent" in st.lower():
+            ok("edge scorecard uses logged PnL only")
+        else:
+            bad("edge scorecard missing logged-PnL / no-invent wiring")
+
+    if reconcile.exists():
+        rt = reconcile.read_text(encoding="utf-8")
+        if "session_closed" in rt and "reconcile_" in rt:
+            ok("paper reconcile writes artifact + gates session_closed")
+        else:
+            bad("paper reconcile missing session_closed / artifact wiring")
+
+    if tape.exists():
+        tt = tape.read_text(encoding="utf-8")
+        if "--divergence" in tt and "unit_mismatch" in tt:
+            ok("pmm_tape exposes triple-tape divergence")
+        else:
+            bad("pmm_tape missing --divergence / unit_mismatch")
+
     # Guard against sibling-stack regressions in entry docs/wrappers
     sibling_hits = []
     for rel in (
