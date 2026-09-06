@@ -237,6 +237,47 @@ def main() -> int:
         else:
             bad("oneinch quotes missing fixture/API key support")
 
+
+    bitkub_cli = ROOT / "scripts" / "pmm_bitkub_paper.py"
+    edge_log_cli = ROOT / "scripts" / "pmm_edge_log.py"
+    for path, label in (
+        (bitkub_cli, "scripts/pmm_bitkub_paper.py"),
+        (edge_log_cli, "scripts/pmm_edge_log.py"),
+    ):
+        if path.exists():
+            ok(f"{label} present")
+        else:
+            bad(f"missing {label}")
+
+    if bitkub_paper.exists():
+        bt2 = bitkub_paper.read_text(encoding="utf-8")
+        if "paper_round_trip" in bt2 and "fee_estimate" in bt2:
+            ok("bitkub paper supports round-trip + fee_estimate fills")
+        else:
+            bad("bitkub paper missing paper_round_trip / fee_estimate")
+        if "CAPS_FILENAME" in bt2 or "bitkub_paper_day_caps" in bt2:
+            ok("bitkub paper has day-caps wiring")
+        else:
+            bad("bitkub paper missing day-caps wiring")
+
+    if bitkub_cli.exists():
+        ct = bitkub_cli.read_text(encoding="utf-8")
+        if "refuse_live" in ct or "not implemented" in ct.lower():
+            ok("pmm_bitkub_paper hard-refuses live")
+        else:
+            bad("pmm_bitkub_paper missing live refuse")
+        if "--stake-thb" in ct and "paper" in ct.lower():
+            ok("pmm_bitkub_paper exposes --stake-thb paper CLI")
+        else:
+            bad("pmm_bitkub_paper missing --stake-thb")
+
+    if edge_log_cli.exists():
+        et = edge_log_cli.read_text(encoding="utf-8")
+        if "edge_log.jsonl" in et and "invented" in et.lower():
+            ok("pmm_edge_log appends paper fills only")
+        else:
+            bad("pmm_edge_log missing edge_log.jsonl / no-invented note")
+
     # Guard against sibling-stack regressions in entry docs/wrappers
     sibling_hits = []
     for rel in (

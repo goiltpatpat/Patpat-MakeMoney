@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Unit tests for multi-venue tape (mocked HTTP — no live network required)."""
+"""Unit tests for multi-venue tape + Bitkub paper round-trip (mocked HTTP)."""
 from __future__ import annotations
 
 import io
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -98,7 +99,6 @@ class PublicBtcTests(unittest.TestCase):
 class OneInchTests(unittest.TestCase):
     def test_fixture_without_key(self):
         with mock.patch.dict("os.environ", {}, clear=False):
-            # ensure key absent
             env = {k: v for k, v in dict(**__import__("os").environ).items() if k != "ONEINCH_API_KEY"}
             with mock.patch.dict("os.environ", env, clear=True):
                 q = oneinch_quotes.fetch_wbtc_usd_quote(allow_fixture=True)
@@ -139,16 +139,23 @@ class BitkubPaperTests(unittest.TestCase):
         self.assertEqual(float(row["last"]), 2500000.0)
 
     def test_paper_fill_buy_uses_ask(self):
-        fill = bitkub_paper.paper_fill_from_ticker(self.SAMPLE, side="buy", symbol="BTC_THB")
+        fill = bitkub_paper.paper_fill_from_ticker(
+            self.SAMPLE, side="buy", symbol="BTC_THB", stake_thb=100.0
+        )
         self.assertEqual(fill["mode"], "paper")
         self.assertFalse(fill["live"])
         self.assertEqual(fill["price_source"], "ask")
-        self.assertAlmostEqual(fill["fill_price"], 2500100.0)
+        self.assertAlmostEqual(fill["px"], 2500100.0)
+        self.assertIsNotNone(fill["size"])
+        self.assertIsNotNone(fill["fee_estimate"])
+        self.assertGreater(fill["fee_estimate"], 0)
 
     def test_paper_fill_sell_uses_bid(self):
-        fill = bitkub_paper.paper_fill_from_ticker(self.SAMPLE, side="sell", symbol="BTC_THB")
+        fill = bitkub_paper.paper_fill_from_ticker(
+            self.SAMPLE, side="sell", symbol="BTC_THB", size=0.0001
+        )
         self.assertEqual(fill["price_source"], "bid")
-        self.assertAlmostEqual(fill["fill_price"], 2499900.0)
+        self.assertAlmostEqual(fill["px"], 2499900.0)
 
     def test_simulate_paper_with_row(self):
         out = bitkub_paper.simulate_paper_order(side="buy", ticker_row=self.SAMPLE)
@@ -158,6 +165,129 @@ class BitkubPaperTests(unittest.TestCase):
     def test_live_stub_raises(self):
         with self.assertRaises(bitkub_paper.BitkubPaperError):
             bitkub_paper.live_order_stub()
+
+    def test_refuse_live_raises(self):
+        with self.assertRaises(bitkub_paper.BitkubPaperError) as cm:
+            bitkub_paper.refuse_live()
+        self.assertIn("not implemented", str(cm.exception).lower())
+
+    def test_round_trip_parseable_fills(self):
+        with tempfile.TemporaryDirectory() as td:
+            rt = Path(td)
+            out = bitkub_paper.paper_round_trip(
+                stake_thb=100.0,
+                open_row=self.SAMPLE,
+                close_row=self.SAMPLE,
+                runtime_dir=rt,
+                enforce_caps=True,
+                record=True,
+            )
+        self.assertTrue(out["ok"])
+        self.assertFalse(out["live"])
+        for leg in ("open", "close"):
+            f = out[leg]
+            for key in ("side", "size", "px", "fee_estimate", "ts"):
+                self.assertIn(key, f, msg=key)
+            self.assertIsNotNone(f["size"])
+            self.assertIsNotNone(f["fee_estimate"])
+        self.assertEqual(out["open"]["side"], "buy")
+        self.assertEqual(out["close"]["side"], "sell")
+        self.assertAlmostEqual(out["open"]["size"], out["close"]["size"])
+        # Same-tick ask>bid ⇒ negative paper PnL after fees (from fills, not invented)
+        self.assertLess(out["realized_pnl_thb"], 0)
+        self.assertIn("paper fills only", out["pnl_basis"])
+
+    def test_day_cap_blocks(self):
+        with tempfile.TemporaryDirectory() as td:
+            rt = Path(td)
+            caps = {
+                "max_trades_per_day": 1,
+                "max_loss_thb": 500.0,
+                "fee_rate": 0.0025,
+            }
+            (rt / bitkub_paper.CAPS_FILENAME).write_text(json.dumps(caps), encoding="utf-8")
+            bitkub_paper.paper_round_trip(
+                stake_thb=50.0,
+                open_row=self.SAMPLE,
+                close_row=self.SAMPLE,
+                runtime_dir=rt,
+                enforce_caps=True,
+                record=True,
+            )
+            with self.assertRaises(bitkub_paper.BitkubPaperError) as cm:
+                bitkub_paper.paper_round_trip(
+                    stake_thb=50.0,
+                    open_row=self.SAMPLE,
+                    close_row=self.SAMPLE,
+                    runtime_dir=rt,
+                    enforce_caps=True,
+                    record=True,
+                )
+            msg = str(cm.exception).lower()
+            self.assertTrue("cap" in msg or "stop" in msg, msg=msg)
+
+
+class EdgeLogTests(unittest.TestCase):
+    def test_append_round_trip(self):
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "pmm_edge_log", ROOT / "scripts" / "pmm_edge_log.py"
+        )
+        mod = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(mod)
+
+        payload = {
+            "live": False,
+            "venue": "bitkub",
+            "symbol": "BTC_THB",
+            "round_trip_id": "t1",
+            "realized_pnl_thb": -1.5,
+            "pnl_basis": "paper fills only",
+            "open": {
+                "venue": "bitkub",
+                "side": "buy",
+                "size": 0.0001,
+                "px": 100.0,
+                "fee_estimate": 0.01,
+                "ts": "2026-09-06T00:00:00Z",
+                "leg": "open",
+                "live": False,
+            },
+            "close": {
+                "venue": "bitkub",
+                "side": "sell",
+                "size": 0.0001,
+                "px": 99.0,
+                "fee_estimate": 0.01,
+                "ts": "2026-09-06T00:00:01Z",
+                "leg": "close",
+                "live": False,
+            },
+        }
+        with tempfile.TemporaryDirectory() as td:
+            log = Path(td) / "edge_log.jsonl"
+            out = mod.append_edge_log(payload, log_path=log)
+            self.assertEqual(out["written"], 2)
+            lines = log.read_text(encoding="utf-8").strip().splitlines()
+            self.assertEqual(len(lines), 2)
+            close_rec = json.loads(lines[1])
+            self.assertEqual(close_rec["realized_pnl_thb"], -1.5)
+
+    def test_refuse_live_payload(self):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "pmm_edge_log2", ROOT / "scripts" / "pmm_edge_log.py"
+        )
+        mod = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(mod)
+        with tempfile.TemporaryDirectory() as td:
+            with self.assertRaises(ValueError):
+                mod.append_edge_log({"live": True, "fill": {"side": "buy"}}, log_path=Path(td) / "e.jsonl")
 
 
 class DoctorVenuesPresenceTests(unittest.TestCase):
@@ -169,6 +299,8 @@ class DoctorVenuesPresenceTests(unittest.TestCase):
             "src/venues/oneinch_quotes.py",
             "src/venues/bitkub/paper.py",
             "scripts/pmm_tape.py",
+            "scripts/pmm_bitkub_paper.py",
+            "scripts/pmm_edge_log.py",
         ):
             self.assertTrue((ROOT / rel).exists(), msg=rel)
 

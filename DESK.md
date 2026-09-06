@@ -1,7 +1,7 @@
 # Patpat-MakeMoney Desk Doctrine
 
 ## Mission
-Turn BTC tape + venue noise into a **falsifiable desk read**, then optionally run skills **paper-first**. Phase 1 sequence: **public data layer → Bitkub paper skeleton**. Polymarket is optional/non-primary (TH geo). Live execution is a gated exception, never the default.
+Turn BTC tape + venue noise into a **falsifiable desk read**, then optionally run skills **paper-first**. Phase 1 sequence: **public data layer → Bitkub paper round-trip**. Polymarket is optional/non-primary (TH geo). Live execution is a gated exception, never the default.
 
 ## Roles
 - **Ledger (Head):** thinks, assigns, synthesizes, gates live
@@ -42,9 +42,10 @@ Impulse and skew gates are implemented but default off; enable through direct ru
 
 ## Venues (Phase 1)
 - Public BTC tape + optional 1inch research quotes first (scripts/pmm_tape.py)
-- Bitkub = SEC-licensed TH **execution candidate**; paper ticker/fill only until paired probes land
+- Bitkub = SEC-licensed TH **execution candidate**; paper open+close RT (scripts/pmm_bitkub_paper.py) + day caps; live hard-refused
+- Paper fills -> scripts/pmm_edge_log.py -> runtime/edge_log.jsonl (Thesis falsify; no invented PnL)
 - Polymarket stays available but demoted; no tips
-- See docs/VENUES.md
+- See docs/VENUES.md (next-PR hooks: edge scorecard, triple-tape divergence, post-stop reconcile)
 
 ## Hard rules
 - No personalized financial advice
