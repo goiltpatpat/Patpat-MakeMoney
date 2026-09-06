@@ -300,7 +300,7 @@ def load_day_caps(runtime_dir: Path) -> dict[str, Any]:
         path.write_text(json.dumps(defaults, indent=2) + "\n", encoding="utf-8")
         return dict(defaults)
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
     except (json.JSONDecodeError, OSError) as e:
         raise BitkubPaperError(f"bad day caps file {path}: {e}") from e
     if not isinstance(data, dict):
@@ -317,7 +317,7 @@ def _load_day_state(runtime_dir: Path) -> dict[str, Any]:
     if not path.exists():
         return empty
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
     except (json.JSONDecodeError, OSError):
         return empty
     if not isinstance(data, dict) or data.get("day") != day:

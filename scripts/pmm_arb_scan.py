@@ -7,6 +7,7 @@ No live orders. No auto-transfer execution.
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import sys
 from pathlib import Path
@@ -26,6 +27,7 @@ from venues.binance_th.tape import (  # noqa: E402
     BinanceTHError,
     DEFAULT_SYMBOL as BNTH_SYMBOL,
     fetch_public_ticker,
+    fetch_usdtthb_fx,
     ticker_to_tape_quote,
     unavailable_status,
 )
@@ -46,11 +48,16 @@ def _refuse_live() -> dict[str, Any]:
     }
 
 
-def _load_dex_mid(*, fixture: bool, timeout: float) -> dict[str, Any]:
-    q = oneinch_quotes.fetch_wbtc_usd_quote(allow_fixture=True if fixture else True, timeout=timeout)
-    # Always allow fixture for keyless; force fixture when --fixture
+def _env_allow_fixture() -> bool:
+    return os.environ.get("PMM_ARB_ALLOW_FIXTURE", "").strip().lower() in ("1", "true", "yes")
+
+
+def _load_dex_mid(*, fixture: bool, allow_fixture: bool, timeout: float) -> dict[str, Any]:
+    """Load DEX mid. Money-path default: never silent 1inch fixture (allow_fixture=False)."""
     if fixture:
-        q = oneinch_quotes.fixture_wbtc_usd_quote()
+        return oneinch_quotes.fixture_wbtc_usd_quote().to_dict()
+    # Default money-path: require key / live quote; no silent fixture fallback
+    q = oneinch_quotes.fetch_wbtc_usd_quote(allow_fixture=False, timeout=timeout)
     return q.to_dict()
 
 
@@ -103,6 +110,20 @@ def main(argv: Optional[list[str]] = None) -> int:
     p.add_argument("--bnth-symbol", default=BNTH_SYMBOL, help="Binance TH symbol, default BTCTHB")
     p.add_argument("--bitkub-symbol", default="BTC_THB")
     p.add_argument("--fixture", action="store_true", help="Use fixture mids (offline / tests)")
+    p.add_argument(
+        "--allow-fixture",
+        action="store_true",
+        help=(
+            "Permit fixture mids in opportunity output (OFFLINE TESTS ONLY). "
+            "Default OFF: fixture legs are KILLed and never claim net>0. "
+            "Also honored via env PMM_ARB_ALLOW_FIXTURE=1."
+        ),
+    )
+    p.add_argument(
+        "--no-fetch-usdthb",
+        action="store_true",
+        help="Do not auto-fetch labeled USDTTHB from api.binance.th when --usdthb omitted",
+    )
     p.add_argument("--timeout", type=float, default=8.0)
     p.add_argument("--dex-fee-bps", type=float, default=30.0)
     p.add_argument("--cex-fee-bps", type=float, default=10.0)
@@ -150,6 +171,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         travel_rule_buffer_bps=args.travel_rule_buffer_bps,
     )
 
+    allow_fixture = bool(args.allow_fixture) or _env_allow_fixture()
+
     usdthb = None
     if args.usdthb is not None:
         if args.usdthb <= 0:
@@ -166,9 +189,17 @@ def main(argv: Optional[list[str]] = None) -> int:
             "pair": "USDTHB",
             "note": "labeled FX quote — not invented",
         }
+    elif not args.no_fetch_usdthb:
+        # Prefer labeled public USDTTHB from api.binance.th — never invent
+        try:
+            usdthb = fetch_usdtthb_fx(timeout=args.timeout, use_fixture=args.fixture)
+        except BinanceTHError:
+            usdthb = None
 
     try:
-        dex = _load_dex_mid(fixture=args.fixture, timeout=args.timeout)
+        dex = _load_dex_mid(
+            fixture=args.fixture, allow_fixture=allow_fixture, timeout=args.timeout
+        )
         if args.cex == "binance_th":
             cex = _load_binance_th_mid(
                 args.bnth_symbol, fixture=args.fixture, timeout=args.timeout
@@ -201,12 +232,15 @@ def main(argv: Optional[list[str]] = None) -> int:
         )
         return 1
 
-    opp = detect_dex_cex_opportunity(dex, cex, fees=fees, usdthb=usdthb)
+    opp = detect_dex_cex_opportunity(
+        dex, cex, fees=fees, usdthb=usdthb, allow_fixture=allow_fixture
+    )
     out: dict[str, Any] = {
         "ok": True,
         "mode": "paper",
         "live": False,
         "paper": True,
+        "allow_fixture": allow_fixture,
         "cex_lane": args.cex,
         "thesis": (
             "BNTH is second TH lane (does not replace Bitkub until pass); "

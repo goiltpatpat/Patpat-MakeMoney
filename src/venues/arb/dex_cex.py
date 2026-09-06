@@ -3,7 +3,7 @@
 Inputs: DEX mid (1inch read-only / fixture) + CEX mid (Binance TH preferred, Bitkub secondary).
 Output Ledger JSON: gross spread, estimated fees, transfer_time_penalty_bps (labeled estimate),
 travel_rule_buffer_bps (labeled estimate), net_edge_bps after costs.
-Kill if net<=0 or unit_mismatch. Refuse inventing USDTHB unless labeled FX quote provided.
+Kill if net<=0, unit_mismatch, or money-leg source=fixture (unless allow_fixture). Refuse inventing USDTHB unless labeled FX quote provided.
 """
 from __future__ import annotations
 
@@ -103,6 +103,14 @@ def _mid_from_quote(q: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _leg_is_fixture(q: dict[str, Any]) -> bool:
+    """True when a money-leg mid is explicitly fixture-sourced."""
+    if q.get("fixture") is True:
+        return True
+    src = str(q.get("source") or "").strip().lower()
+    return src == "fixture"
+
+
 def detect_dex_cex_opportunity(
     dex: dict[str, Any],
     cex: dict[str, Any],
@@ -110,13 +118,16 @@ def detect_dex_cex_opportunity(
     fees: Optional[ArbFeeConfig] = None,
     usdthb: Optional[dict[str, Any]] = None,
     prefer_direction: Optional[str] = None,
+    allow_fixture: bool = False,
 ) -> dict[str, Any]:
     """
     Detect DEX↔CEX arb opportunity and return Ledger JSON.
 
     - unit_mismatch (no labeled FX) → kill
     - net_edge_bps <= min_net_edge_bps → kill
+    - money leg source=fixture → kill unless allow_fixture (offline tests only)
     - Never invents USDTHB; reuse divergence helpers for FX-adjusted compare
+    - Never report net>0 from fixture on the default money-path (allow_fixture=False)
     """
     fees = fees or ArbFeeConfig()
     fee_dict = fees.to_dict()
@@ -124,6 +135,34 @@ def detect_dex_cex_opportunity(
     b = _mid_from_quote(cex)
     a["role"] = "dex"
     b["role"] = "cex"
+
+    if not allow_fixture:
+        fixture_legs: list[str] = []
+        if _leg_is_fixture(a):
+            fixture_legs.append("dex")
+        if _leg_is_fixture(b):
+            fixture_legs.append("cex")
+        if usdthb and _leg_is_fixture(usdthb):
+            fixture_legs.append("usdthb")
+        if fixture_legs:
+            legs = {"dex": a, "cex": b, "fixture_legs": fixture_legs}
+            result = ArbScanResult(
+                status="fixture_mid",
+                kill=True,
+                kill_reason="money_leg_source_fixture",
+                fee_stack=fee_dict,
+                legs=legs,
+                comparable=False,
+                unit=None,
+                note=(
+                    "KILL: fixture mid on money path — never claim net>0 from fixture. "
+                    "Pass allow_fixture=True / --allow-fixture for offline tests only."
+                ),
+            )
+            out = result.to_ledger_json()
+            out["allow_fixture"] = False
+            out["fixture_legs"] = fixture_legs
+            return out
 
     div = pair_divergence(a, b, usdthb=usdthb)
 
@@ -341,6 +380,7 @@ def simulate_paper_dual_leg(
 __all__ = [
     "ArbFeeConfig",
     "ArbScanResult",
+    "_leg_is_fixture",
     "detect_dex_cex_opportunity",
     "simulate_paper_dual_leg",
     "quote_currency",

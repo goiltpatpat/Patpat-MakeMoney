@@ -380,6 +380,41 @@ def main() -> int:
         else:
             bad("DESK.md missing Binance TH / BNTH")
 
+
+    apis_md = ROOT / "docs" / "APIS.md"
+    holes_md = ROOT / "docs" / "HOLES.md"
+    if apis_md.exists():
+        at = apis_md.read_text(encoding="utf-8")
+        if "api.binance.th" in at and "ONEINCH" in at.upper() and "Travel Rule" in at:
+            ok("docs/APIS.md covers BNTH + DEX + Travel Rule")
+        else:
+            bad("docs/APIS.md incomplete (need api.binance.th / 1inch / Travel Rule)")
+    else:
+        bad("missing docs/APIS.md")
+    if holes_md.exists() and "fixture" in holes_md.read_text(encoding="utf-8").lower():
+        ok("docs/HOLES.md present (fixture hygiene)")
+    else:
+        bad("missing or incomplete docs/HOLES.md")
+
+    if arb_mod.exists():
+        at2 = arb_mod.read_text(encoding="utf-8")
+        if "money_leg_source_fixture" in at2 and "allow_fixture" in at2:
+            ok("arb detector fixture-kills unless allow_fixture")
+        else:
+            bad("arb detector missing fixture-kill / allow_fixture")
+    if arb_cli.exists():
+        ct2 = arb_cli.read_text(encoding="utf-8")
+        if "--allow-fixture" in ct2 and "allow_fixture=True if fixture else True" not in ct2:
+            ok("pmm_arb_scan has --allow-fixture and no always-true fixture bug")
+        else:
+            bad("pmm_arb_scan missing --allow-fixture or still has always-true fixture bug")
+    if bitkub_paper.exists():
+        bt3 = bitkub_paper.read_text(encoding="utf-8")
+        if "utf-8-sig" in bt3:
+            ok("bitkub day caps loader uses utf-8-sig (BOM-safe)")
+        else:
+            bad("bitkub day caps loader missing utf-8-sig")
+
     # Guard against sibling-stack regressions in entry docs/wrappers
     sibling_hits = []
     for rel in (
