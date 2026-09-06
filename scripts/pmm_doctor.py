@@ -434,12 +434,16 @@ def main() -> int:
     sol_cli = ROOT / "scripts" / "pmm_sol_tape.py"
     sol_cex = ROOT / "src" / "venues" / "arb" / "sol_cex.py"
     desk_bal = ROOT / "src" / "venues" / "solana" / "desk_balance.py"
+    sol_paper = ROOT / "src" / "venues" / "solana" / "paper.py"
+    sol_paper_cli = ROOT / "scripts" / "pmm_sol_paper.py"
     custody_md = ROOT / "docs" / "SOLANA_CUSTODY.md"
     for path_, label in (
         (solana_md, "docs/SOLANA.md"),
         (jup, "src/venues/solana/jupiter_quotes.py"),
         (desk_bal, "src/venues/solana/desk_balance.py"),
+        (sol_paper, "src/venues/solana/paper.py"),
         (sol_cli, "scripts/pmm_sol_tape.py"),
+        (sol_paper_cli, "scripts/pmm_sol_paper.py"),
         (sol_cex, "src/venues/arb/sol_cex.py"),
         (custody_md, "docs/SOLANA_CUSTODY.md"),
     ):
@@ -525,6 +529,32 @@ def main() -> int:
         else:
             bad("pmm_sol_tape missing balance pubkey probe wiring")
 
+    if sol_paper.exists():
+        spt = sol_paper.read_text(encoding="utf-8")
+        if 'VENUE = "solana_paper"' in spt or "solana_paper" in spt:
+            ok("solana paper module tags venue=solana_paper")
+        else:
+            bad("solana paper missing venue=solana_paper")
+        if "refuse_live" in spt and "NEVER" in spt.upper():
+            ok("solana paper refuses live / never sign")
+        else:
+            bad("solana paper missing refuse_live posture")
+        if "fee_bps" in spt and "realized_pnl_thb" in spt and "invent" in spt.lower():
+            ok("solana paper uses API fee_bps + no invented PnL")
+        else:
+            bad("solana paper missing fee_bps / no-invented-PnL wiring")
+
+    if sol_paper_cli.exists():
+        spc = sol_paper_cli.read_text(encoding="utf-8")
+        if "--live" in spc and ("REFUSED" in spc or "refuse" in spc.lower()):
+            ok("pmm_sol_paper hard-refuses --live")
+        else:
+            bad("pmm_sol_paper missing --live refuse")
+        if "--allow-fixture" in spc and "--log-edge" in spc and "--batch" in spc:
+            ok("pmm_sol_paper has allow-fixture + log-edge + batch")
+        else:
+            bad("pmm_sol_paper missing allow-fixture / log-edge / batch")
+
     if desk_bal.exists():
         dbt = desk_bal.read_text(encoding="utf-8")
         if "getBalance" in dbt and "never" in dbt.lower() and "seed" in dbt.lower():
@@ -549,6 +579,10 @@ def main() -> int:
             ok("docs/SOLANA.md notes 0.001 SOL smoke + Thesis phase")
         else:
             bad("docs/SOLANA.md missing 0.001 SOL smoke / Thesis phase note")
+        if "solana_paper" in sm and "pmm_sol_paper" in sm and "edge_log" in sm:
+            ok("docs/SOLANA.md covers T2 paper fill -> edge_log")
+        else:
+            bad("docs/SOLANA.md missing T2 paper / edge_log notes")
 
     if custody_md.exists():
         cm = custody_md.read_text(encoding="utf-8")

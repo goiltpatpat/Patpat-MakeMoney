@@ -21,11 +21,16 @@ def _utc_now_iso() -> str:
 
 
 def _extract_fills(payload: dict[str, Any]) -> list[dict[str, Any]]:
-    """Normalize open/close or single fill payloads into fill records."""
+    """Normalize open/close, batch fills[], or single fill payloads into fill records."""
     fills: list[dict[str, Any]] = []
     if "open" in payload and "close" in payload:
         for leg in ("open", "close"):
             f = payload.get(leg)
+            if isinstance(f, dict):
+                fills.append(dict(f))
+        return fills
+    if "fills" in payload and isinstance(payload["fills"], list):
+        for f in payload["fills"]:
             if isinstance(f, dict):
                 fills.append(dict(f))
         return fills

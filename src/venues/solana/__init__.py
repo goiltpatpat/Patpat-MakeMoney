@@ -1,4 +1,4 @@
-"""Solana venue package — research / dry-run quotes only (no custody, no swaps)."""
+"""Solana venue package — research quotes + paper fills (no custody, no swaps)."""
 from __future__ import annotations
 
 from venues.solana.desk_balance import (
@@ -16,6 +16,14 @@ from venues.solana.jupiter_quotes import (
     fetch_jupiter_usd_price,
     fixture_sol_usdc_quote,
 )
+from venues.solana.paper import (
+    VENUE as SOLANA_PAPER_VENUE,
+    SolanaPaperError,
+    paper_batch_fills,
+    paper_fill_from_quote,
+    refuse_live as refuse_solana_live,
+    simulate_paper_fill,
+)
 
 __all__ = [
     "DEFAULT_DESK_PUBKEY",
@@ -23,10 +31,16 @@ __all__ = [
     "DeskBalanceError",
     "DeskBalanceProbe",
     "JupiterQuoteError",
+    "SOLANA_PAPER_VENUE",
     "SOL_MINT",
     "USDC_MINT",
+    "SolanaPaperError",
     "fetch_desk_balance",
     "fetch_jupiter_order_quote",
     "fetch_jupiter_usd_price",
     "fixture_sol_usdc_quote",
+    "paper_batch_fills",
+    "paper_fill_from_quote",
+    "refuse_solana_live",
+    "simulate_paper_fill",
 ]
