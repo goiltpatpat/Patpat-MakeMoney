@@ -171,6 +171,39 @@ def main() -> int:
             ok("runner exposes --enable-gates")
         else:
             bad("runner missing --enable-gates")
+        if "parents[1]" in rt and "default_repo_path" in rt and "pm-hl-conservative-plus-repo" not in rt:
+            ok("skill default_repo_path is first-party repo root")
+        else:
+            bad("skill default_repo_path still looks external/sibling")
+
+    live = ROOT / "src" / "live" / "pm_live_trade_runner.py"
+    if live.exists():
+        lt = live.read_text(encoding="utf-8")
+        ok("first-party src/live/pm_live_trade_runner.py present")
+        if "--force-side" in lt:
+            ok("live runner accepts --force-side")
+        else:
+            bad("live runner missing --force-side")
+    else:
+        bad("missing first-party src/live/pm_live_trade_runner.py")
+
+    # Guard against sibling-stack regressions in entry docs/wrappers
+    sibling_hits = []
+    for rel in (
+        "CONTOUR.md",
+        "SKILL.md",
+        "scripts/btc5m_ctl.sh",
+        "scripts/watch_btc_5m_threshold_and_enter.sh",
+        "scripts/run_btc_5m_threshold_test.py",
+        "docker-compose.yml",
+    ):
+        p = ROOT / rel
+        if p.exists() and "pm-hl-conservative-plus-repo" in p.read_text(encoding="utf-8"):
+            sibling_hits.append(rel)
+    if sibling_hits:
+        bad("sibling pm-hl path still referenced in: " + ", ".join(sibling_hits))
+    else:
+        ok("no sibling pm-hl path in primary entry docs/wrappers")
 
     print("---")
     print(f"passed={len(PASSES)} failed={len(FAILS)}")

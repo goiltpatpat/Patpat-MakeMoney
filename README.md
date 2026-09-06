@@ -128,6 +128,17 @@ python scripts/test_btc_5m_session_exit_sl.py --profile desk --enable-gates --ex
 | `tests/` | Desk + gate unit tests |
 | `examples/run-example.md` | Command examples |
 
+
+## Team readiness (paper)
+
+**Ready for team paper ops** on a machine with this checkout + `.venv` (`requirements-exec.txt`):
+
+- `scripts/pmm_ctl.sh start --profile desk` (no `--live`)
+- Offline prove: `python scripts/pmm_doctor.py` and `python -m unittest discover -s tests -v`
+- Optional gates paper: add `--enable-gates` on the skill runner
+
+**Not ready for live** until explicit human/Ledger go-ahead (`--live` / `--execute`), credentials in `.env`, and force-close safety review.
+
 ## Risk notice
 
 Operational / educational infrastructure for the Patpat-MakeMoney desk. Markets can and will lose money. This repository does not guarantee edge, fills, or PnL. Live trading is a gated exception, never the default.
