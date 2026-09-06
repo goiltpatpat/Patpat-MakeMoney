@@ -56,3 +56,4 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 
 **Note:** `--skew-gate` alone does not require impulse alignment; use `--enable-gates` for strict `impulse_dir == skew_side == entry_side`.
 
+

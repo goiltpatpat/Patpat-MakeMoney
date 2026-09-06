@@ -368,7 +368,12 @@ def default_repo_path() -> str:
     env_repo = os.environ.get('BTC5M_REPO')
     if env_repo:
         return env_repo
-    return str(Path(__file__).resolve().parents[3] / 'pm-hl-conservative-plus-repo')
+    skill_root = Path(__file__).resolve().parents[1]
+    desk_sibling = skill_root.parent / 'pm-hl-conservative-plus-repo'
+    if desk_sibling.is_dir():
+        return str(desk_sibling)
+    # Legacy: home-level sibling (skill/../../pm-hl-...)
+    return str(skill_root.parents[1] / 'pm-hl-conservative-plus-repo')
 
 
 def main():

@@ -4,8 +4,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 RUNTIME_DIR="$SKILL_ROOT/runtime"
-WORKSPACE_ROOT="$(cd "$SKILL_ROOT/../.." && pwd)"
-REPO_DEFAULT="$WORKSPACE_ROOT/pm-hl-conservative-plus-repo"
+# Desk layout: Patpat-MakeMoney and pm-hl live as Desktop siblings.
+DESK_ROOT="$(cd "$SKILL_ROOT/.." && pwd)"
+REPO_DEFAULT="${DESK_ROOT}/pm-hl-conservative-plus-repo"
+# Legacy fallback (pre-Desktop colocation): home-level sibling
+if [[ ! -d "$REPO_DEFAULT" ]]; then
+  WORKSPACE_ROOT="$(cd "$SKILL_ROOT/../.." && pwd)"
+  REPO_DEFAULT="$WORKSPACE_ROOT/pm-hl-conservative-plus-repo"
+fi
 REPO="${BTC5M_REPO:-$REPO_DEFAULT}"
 RUNNER="${BTC5M_RUNNER:-$SKILL_ROOT/scripts/test_btc_5m_session_exit_sl.py}"
 VENV_PY="$REPO/.venv/bin/python"
