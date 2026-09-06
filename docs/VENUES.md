@@ -147,6 +147,8 @@ python scripts/pmm_sol_basis_scan.py --paper --prices-only
 python scripts/pmm_sol_tape.py
 python scripts/pmm_sol_tape.py --price-v3
 python scripts/pmm_sol_tape.py --fixture --allow-fixture
+python scripts/pmm_sol_basis_scan.py --paper --fixture --allow-fixture --prices-only
+python scripts/pmm_lst_basis_scan.py --paper --fixture --allow-fixture --prices-only
 
 # Log paper fills for expectancy falsify (no invented PnL)
 python scripts/pmm_bitkub_paper.py --stake-thb 50 --no-record > /tmp/rt.json
@@ -177,6 +179,11 @@ Live Bitkub / BNTH / arb: env gates are documented only; `--live` paths **hard-r
 - **Never** label `api.binance.com` as Binance TH.
 - **Never** sign/send Solana txs; Jupiter path is quote-only (no taker).
 
+
+### LST basis (mSOL / jitoSOL)
+
+Paper/RO: Marinade `msol/price_sol` + jitoSOL SPL stake-pool ratio vs Jupiter LST→SOL (src/venues/basis/lst.py, scripts/pmm_lst_basis_scan.py). Labeled bps; fixture-kill; --live refuse; no APY tipster; no auto-trade.
+
 ## Prove
 
 ```bash
@@ -188,6 +195,8 @@ python scripts/pmm_bitkub_paper.py --stake-thb 50 --no-record
 python scripts/pmm_arb_scan.py --paper --fixture --allow-fixture --usdthb 36.0 --usdthb-source prove
 python scripts/pmm_basis_scan.py --paper --prices-only
 python scripts/pmm_sol_tape.py --fixture --allow-fixture
+python scripts/pmm_sol_basis_scan.py --paper --fixture --allow-fixture --prices-only
+python scripts/pmm_lst_basis_scan.py --paper --fixture --allow-fixture --prices-only
 python scripts/pmm_edge_scorecard.py
 python scripts/pmm_paper_reconcile.py --preview
 ```

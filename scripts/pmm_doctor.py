@@ -666,6 +666,71 @@ def main() -> int:
             bad("docs/APIS.md missing Jupiter / JUPITER_API_KEY")
 
 
+
+    # LST fair-rate vs Jupiter basis (mSOL / jitoSOL) — paper/RO
+    lst_mod = ROOT / "src" / "venues" / "basis" / "lst.py"
+    lst_cli = ROOT / "scripts" / "pmm_lst_basis_scan.py"
+    for path, label in (
+        (lst_mod, "src/venues/basis/lst.py"),
+        (lst_cli, "scripts/pmm_lst_basis_scan.py"),
+    ):
+        if path.exists():
+            ok(f"{label} present")
+        else:
+            bad(f"{label} missing")
+
+    if lst_mod.exists():
+        lt = lst_mod.read_text(encoding="utf-8")
+        if "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So" in lt and "Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb" in lt:
+            ok("lst basis has mSOL mint + jito stake-pool wiring")
+        else:
+            bad("lst basis missing mSOL / jito stake-pool constants")
+        if "net_basis_bps" in lt and "ESTIMATE" in lt and "money_leg_source_fixture" in lt:
+            ok("lst basis has ESTIMATE net_basis_bps + fixture kill")
+        else:
+            bad("lst basis missing ESTIMATE / fixture kill")
+        if "api.marinade.finance" in lt and "APY" in lt:
+            ok("lst basis uses Marinade price_sol (APY tipster posture documented)")
+        else:
+            bad("lst basis missing Marinade price_sol / APY note")
+
+    if lst_cli.exists():
+        lct = lst_cli.read_text(encoding="utf-8")
+        if "--live" in lct and "REFUSED" in lct and "return 2" in lct:
+            ok("pmm_lst_basis_scan hard-refuses --live")
+        else:
+            bad("pmm_lst_basis_scan missing --live refuse")
+        if "--allow-fixture" in lct and "ESTIMATE" in lct:
+            ok("pmm_lst_basis_scan has allow-fixture + ESTIMATE labels")
+        else:
+            bad("pmm_lst_basis_scan missing allow-fixture / ESTIMATE")
+        if "tipster" in lct.lower() or "no APY" in lct or "APY tipster" in lct:
+            ok("pmm_lst_basis_scan documents no APY tipster")
+        else:
+            bad("pmm_lst_basis_scan missing no-APY-tipster note")
+
+    if solana_md.exists():
+        sm3 = solana_md.read_text(encoding="utf-8")
+        if "pmm_lst_basis_scan" in sm3 or "LST basis" in sm3 or "lst-basis" in sm3:
+            ok("docs/SOLANA.md covers LST basis paper tape")
+        else:
+            bad("docs/SOLANA.md missing LST basis note")
+
+    if venues_md.exists():
+        vt4 = venues_md.read_text(encoding="utf-8")
+        if "lst" in vt4.lower() or "pmm_lst_basis_scan" in vt4 or "mSOL" in vt4:
+            ok("docs/VENUES.md covers LST basis")
+        else:
+            bad("docs/VENUES.md missing LST basis note")
+
+    if apis_md.exists():
+        at5 = apis_md.read_text(encoding="utf-8")
+        if "pmm_lst_basis_scan" in at5 or "msol/price_sol" in at5 or "lst basis" in at5.lower():
+            ok("docs/APIS.md mentions LST basis / Marinade price_sol")
+        else:
+            bad("docs/APIS.md missing LST basis note")
+
+
     # Guard against sibling-stack regressions in entry docs/wrappers
     sibling_hits = []
     for rel in (

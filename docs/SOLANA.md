@@ -144,3 +144,31 @@ See [docs/SOLANA_CUSTODY.md](SOLANA_CUSTODY.md) — team desk ops rights; seed s
 ## Expanded mandate (operator)
 
 Desk may **scout + design** Solana make-money lanes **beyond Jupiter-only** (aggregators, AMMs/DLMM, RFQ, LST/basis screens, CEX↔SOL premium — each with falsify/kill criteria). Paper/read-only first. No tipster. No ungated live. THB rails (Bitkub↔BNTH) remain fiat priority; Solana is a parallel on-chain build lane.
+
+
+## LST basis paper tape (mSOL / jitoSOL)
+
+Paper / read-only **LST fair-rate vs Jupiter** scan:
+
+1. **Marinade mSOL fair:** `GET https://api.marinade.finance/msol/price_sol` → SOL per 1 mSOL (protocol true price). APY endpoints intentionally unused (no tipster).
+2. **jitoSOL fair:** SPL stake-pool ratio `totalLamports / poolTokenSupply` from account `Jito4APyf642JPZPx3hGc6WWJ8zPKtRbRs4P815Awbb` via public RPC `getAccountInfo` (RO decode).
+3. **Jupiter leg:** `GET /swap/v2/order` WITHOUT taker for LST→SOL (quote-only). Route labels (Raydium/Orca/Meteora when present) logged as dispersion *hints* only — not independent DEX mids.
+
+- `gross_basis_bps` / `net_basis_bps` labeled; fee floor prefers API `feeBps` else ESTIMATE.
+- Fixture-kill default; `--live` hard-refuse (exit 2).
+- Fail closed on HTTP/RPC errors — never invent fair rates or mids.
+- No seeds, tips, APY marketing, or auto-trade.
+
+`
+src/venues/basis/lst.py
+scripts/pmm_lst_basis_scan.py
+tests/test_lst_basis.py
+`
+
+`ash
+python scripts/pmm_lst_basis_scan.py --paper
+python scripts/pmm_lst_basis_scan.py --paper --lst mSOL --prices-only
+python scripts/pmm_lst_basis_scan.py --paper --fixture --allow-fixture --prices-only
+python scripts/pmm_lst_basis_scan.py --live   # exit 2 REFUSED
+`
+
