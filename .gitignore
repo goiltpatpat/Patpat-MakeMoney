@@ -28,8 +28,3 @@ Thumbs.db
 Desktop.ini
 
 # Vendored execution stack local state
-vendor/**/.venv/
-vendor/**/.env
-vendor/**/.env.*
-!vendor/**/.env.example
-vendor/**/runtime/

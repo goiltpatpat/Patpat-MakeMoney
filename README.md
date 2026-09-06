@@ -78,7 +78,7 @@ PYTHONPATH=scripts python -m unittest tests.test_desk_safety tests.test_pmm_gate
 **Prerequisites**
 
 - Python environment for the runner
-- External Polymarket execution stack at `$BTC5M_REPO` (default sibling path `pm-hl-conservative-plus-repo` — **not shipped in this repo**)
+- First-party execution runner at `src/live/pm_live_trade_runner.py` (repo-local `.venv`; optional `$BTC5M_REPO` override)
 - Credentials only in that stack’s `.env` / `BTC5M_ENV_FILE` (never commit secrets)
 
 ```bash

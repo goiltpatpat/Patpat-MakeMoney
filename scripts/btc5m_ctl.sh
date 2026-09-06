@@ -4,18 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 RUNTIME_DIR="$SKILL_ROOT/runtime"
-# Single-repo layout: execution stack lives under this skill.
-REPO_DEFAULT="$SKILL_ROOT/vendor/pm-hl-conservative-plus-repo"
-# Legacy fallbacks (Desktop sibling, then home-level)
-if [[ ! -d "$REPO_DEFAULT" ]]; then
-  DESK_ROOT="$(cd "$SKILL_ROOT/.." && pwd)"
-  REPO_DEFAULT="${DESK_ROOT}/pm-hl-conservative-plus-repo"
-fi
-if [[ ! -d "$REPO_DEFAULT" ]]; then
-  WORKSPACE_ROOT="$(cd "$SKILL_ROOT/../.." && pwd)"
-  REPO_DEFAULT="$WORKSPACE_ROOT/pm-hl-conservative-plus-repo"
-fi
-REPO="${BTC5M_REPO:-$REPO_DEFAULT}"
+# Patpat-MakeMoney is the sole execution root (no external/vendor sibling).
+REPO="${BTC5M_REPO:-$SKILL_ROOT}"
 RUNNER="${BTC5M_RUNNER:-$SKILL_ROOT/scripts/test_btc_5m_session_exit_sl.py}"
 VENV_PY="$REPO/.venv/bin/python"
 ENV_FILE="${BTC5M_ENV_FILE:-$REPO/.env}"
@@ -39,7 +29,7 @@ Notes:
 - Patpat-MakeMoney: start is PAPER/dry-run by default. Pass --live or --execute for real orders.
 - Default profile: desk
 - Runtime: ./runtime (skill-isolated)
-- Auth/env: pm-hl-conservative-plus-repo/.env (or BTC5M_ENV_FILE)
+- Auth/env: .env at repo root (or BTC5M_ENV_FILE)
 - Team alias: scripts/pmm_ctl.sh
 EOF
 }

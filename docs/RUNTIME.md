@@ -32,7 +32,7 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 - Offline doctor/unit PASS ≠ end-to-end paper session readiness
 
 ## Paper session prerequisites (FACT — not self-contained in this repo alone)
-1. External stack at `BTC5M_REPO` (default sibling `pm-hl-conservative-plus-repo`) with `.venv` and `src/live/pm_live_trade_runner.py`
+1. This repo checkout with `.venv` (see `requirements-exec.txt`) and `src/live/pm_live_trade_runner.py`
 2. `py_clob_client` (and other skill runner deps) in the Python used by the skill runner / ctl
 3. Reachability: Polymarket Gamma + CLOB (Binance required only if impulse gate enabled)
 4. Confirm pm-hl dry mode (no `--execute`) returns parseable JSON without live keys — **unverified** until the stack is present
@@ -45,8 +45,8 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 - The force-close path creates an authenticated client and can cancel token orders without a local `args.execute` check. Reposting does not require cancellation success. External response contracts and these paths require a separate safety review before relying on paper/live isolation.
 
 ## External execution stack
-- Vendored under this repo from Novals83/polymarket-hl-strategy (no separate team GitHub repo)
-- Default local path: `BTC5M_REPO` / sibling `pm-hl-conservative-plus-repo` under the workspace parent (`~/pm-hl-conservative-plus-repo` on this desk)
+- First-party at `src/live/pm_live_trade_runner.py` (derived from Novals83/polymarket-hl-strategy; developed in this repo)
+- Execution root defaults to this repository (`BTC5M_REPO` override optional)
 - Desk patch: runner accepts `--force-side UP|DOWN` so Patpat-MakeMoney owns entry side (HL signal is advisory when force-side is set)
 - Paper still invokes this stack on every `run_open` / `run_close`; `--execute` only toggles live
 

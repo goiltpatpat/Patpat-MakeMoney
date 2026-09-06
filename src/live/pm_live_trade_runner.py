@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-Polymarket live trade runner (guarded).
+Patpat-MakeMoney live trade runner (guarded).
+
+Derived from Novals83/polymarket-hl-strategy; owned and developed in this repo.
 
 - Uses Gamma API to resolve active BTC 15m market + token ids.
 - Builds direction signal from Hyperliquid short momentum.
