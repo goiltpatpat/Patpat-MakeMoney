@@ -70,6 +70,7 @@ See `docs/SOLANA.md`, `docs/SOLANA_CUSTODY.md`.
 | `PMM_BINANCE_TH_FIXTURE=1` | BNTH offline fixture ticker |
 | `PMM_ARB_ALLOW_FIXTURE=1` | Permit fixture mids in arb opportunity output (tests only; default OFF) |
 | `PMM_BASIS_ALLOW_FIXTURE=1` | Permit fixture mids in basis scan (tests only; default OFF) |
+| `PMM_SOL_BASIS_ALLOW_FIXTURE=1` | Permit fixture mids in SOL–THB basis scan (tests only; default OFF) |
 | `PMM_BITKUB_LIVE_OK` | Documented future Bitkub live gate — **not honored** by paper module |
 | `PMM_LIVE_OK` | Polymarket / desk live gate (separate stack) |
 | `BITKUB_API_KEY` / `BITKUB_API_SECRET` | Placeholders for future live — unused by paper |
@@ -84,6 +85,7 @@ Secrets stay in `.env` / env; never commit real keys.
 | `pmm_bitkub_paper.py` | Paper RT | `--live` hard-refuse |
 | `pmm_arb_scan.py` | Paper SCAN | `--live` hard-refuse (exit 2) |
 | `pmm_basis_scan.py` | Paper same-ccy THB basis SCAN | `--live` hard-refuse (exit 2) |
+| `pmm_sol_basis_scan.py` | SOL–THB same-ccy + Jupiter×labeled FX basis SCAN | `--live` hard-refuse (exit 2) |
 | `pmm_sol_tape.py` | Solana Jupiter quote-only + optional RO balance | `--live` hard-refuse (exit 2); `--balance-pubkey` |
 | Fixture money briefs | **Killed** (`money_leg_source_fixture`) | Offline only with `--allow-fixture` |
 
