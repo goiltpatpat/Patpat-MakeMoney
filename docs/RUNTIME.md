@@ -18,7 +18,7 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 - Pass if `abs(move) >= btc_move_usd_min` and direction not FLAT
 - desk min default **80**; conservative/aggressive **70**
 - `btc_move_usd_max_reference` (100) = soft flag only
-- Feed error/stale → `skip_impulse_feed_unavailable` (never enter)
+- Open kline fail → `skip_impulse_open_unavailable`; last-price/HTTP fail → `skip_impulse_feed_unavailable` (never enter; no last-print age clock yet)
 
 **Skew (CLOB asks):**
 - `skew_side` = higher best ask (tie → skip)
