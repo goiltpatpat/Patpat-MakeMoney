@@ -46,12 +46,24 @@ Same quote currency **THB only** — **no FX path**. Compare Bitkub `BTC_THB` vs
 
 CLI: `scripts/pmm_basis_scan.py` -> optional JSONL `runtime/basis_ledger.jsonl`.
 
+
+## SOL–THB basis paper tape (Bitkub + BNTH + Jupiter×FX)
+
+Extends Bitkub↔BNTH same-ccy THB basis to **SOL**:
+
+1. **Same-ccy:** Bitkub `SOL_THB` vs BNTH `SOLTHB` — sign/fee/kill parity with BTC basis (`src/venues/basis/sol_thb.py`).
+2. **Jupiter×FX:** Jupiter SOL/USDC mid × labeled BNTH `USDTTHB` vs CEX SOL–THB mid. FX must be labeled; USDC≈USDT explicit.
+3. **ESTIMATE** fee floor → `net_basis_bps`. Fixture-kill default. `--live` hard-refuse.
+4. CLI: `scripts/pmm_sol_basis_scan.py` → optional JSONL `runtime/sol_basis_ledger.jsonl`.
+
+
 ## Sequence (locked)
 
 1. **Data layer first** — public BTC tape + 1inch read-only quotes (`src/venues/`, `scripts/pmm_tape.py`).
 2. **Bitkub paper round-trip** — public ticker → open+close fill JSON + day caps (`src/venues/bitkub/paper.py`, `scripts/pmm_bitkub_paper.py`). Edge log for Thesis falsify (`scripts/pmm_edge_log.py`).
 3. **Binance TH lane + DEX→CEX arb SCAN** — `api.binance.th` ticker + `scripts/pmm_arb_scan.py` (paper only; `--live` hard-refuse). BNTH is **second** TH lane — does not replace Bitkub until pass.
 3b. **Bitkub↔BNTH same-ccy THB basis** — `scripts/pmm_basis_scan.py` (THB only; kill FX/fixture/stale; `--live` hard-refuse).
+3c. **SOL–THB basis paper tape** — `scripts/pmm_sol_basis_scan.py` (SOL_THB/SOLTHB same-ccy + Jupiter×labeled USDTTHB; ESTIMATE fees; `--live` hard-refuse).
 4. Full Bitkub adapter / session runner **after** ≥10 paired data-layer probes.
 5. Polymarket remains available but demoted; live PM still gated by existing `PMM_LIVE_OK` / `--live` paths and is not the multi-venue default.
 
@@ -75,10 +87,12 @@ src/venues/
     sol_cex.py         # optional Jupiter vs BNTH stub (labeled units / fixture-kill)
   basis/
     bitkub_bnth.py     # Bitkub↔BNTH same-ccy THB basis (gross vs net + duration filter)
+    sol_thb.py         # SOL–THB same-ccy + Jupiter×labeled FX basis
 scripts/pmm_tape.py           # multi-venue tape JSON brief (+ --divergence)
 scripts/pmm_bitkub_paper.py   # paper RT CLI; refuses --live
 scripts/pmm_arb_scan.py       # DEX→CEX arb SCAN CLI (--paper only; --live hard-refuse)
 scripts/pmm_basis_scan.py     # Bitkub↔BNTH THB basis SCAN CLI (--live hard-refuse)
+scripts/pmm_sol_basis_scan.py # SOL–THB basis SCAN CLI (--live hard-refuse)
 scripts/pmm_sol_tape.py       # Solana Jupiter quote tape (--live hard-refuse)
 docs/SOLANA.md                # Solana research lane docs
 scripts/pmm_edge_log.py       # append paper fills -> runtime/edge_log.jsonl
@@ -122,6 +136,11 @@ python scripts/pmm_arb_scan.py --paper --fixture --allow-fixture --usdthb 36.0 -
 python scripts/pmm_basis_scan.py --paper
 python scripts/pmm_basis_scan.py --paper --prices-only
 python scripts/pmm_basis_scan.py --paper --poll 2 --persist-sec 6 --min-net-bps 5
+# --live is hard-refused (exit 2)
+
+# SOL–THB basis SCAN (same-ccy + Jupiter×labeled USDTTHB)
+python scripts/pmm_sol_basis_scan.py --paper
+python scripts/pmm_sol_basis_scan.py --paper --prices-only
 # --live is hard-refused (exit 2)
 
 # Solana Jupiter research tape (quote-only; no taker / no sign)

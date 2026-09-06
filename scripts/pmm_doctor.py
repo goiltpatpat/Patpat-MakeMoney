@@ -550,6 +550,66 @@ def main() -> int:
         else:
             bad("docs/SOLANA.md missing 0.001 SOL smoke / Thesis phase note")
 
+
+    # SOL–THB basis paper tape (slice B)
+    sol_basis_mod = ROOT / "src" / "venues" / "basis" / "sol_thb.py"
+    sol_basis_cli = ROOT / "scripts" / "pmm_sol_basis_scan.py"
+    for path_, label in (
+        (sol_basis_mod, "src/venues/basis/sol_thb.py"),
+        (sol_basis_cli, "scripts/pmm_sol_basis_scan.py"),
+    ):
+        if path_.exists():
+            ok(f"{label} present")
+        else:
+            bad(f"missing {label}")
+
+    if sol_basis_mod.exists():
+        sbt = sol_basis_mod.read_text(encoding="utf-8")
+        if "SOL_THB" in sbt and "SOLTHB" in sbt and "USDTTHB" in sbt:
+            ok("sol_thb basis has SOL_THB / SOLTHB / USDTTHB wiring")
+        else:
+            bad("sol_thb basis missing SOL_THB / SOLTHB / USDTTHB")
+        if "net_basis_bps" in sbt and "ESTIMATE" in sbt and "money_leg_source_fixture" in sbt:
+            ok("sol_thb basis has ESTIMATE net_basis_bps + fixture kill")
+        else:
+            bad("sol_thb basis missing ESTIMATE / fixture kill")
+        if "jupiter" in sbt.lower() and "same_ccy" in sbt:
+            ok("sol_thb basis has same_ccy + jupiter FX lanes")
+        else:
+            bad("sol_thb basis missing same_ccy / jupiter lanes")
+
+    if sol_basis_cli.exists():
+        sct = sol_basis_cli.read_text(encoding="utf-8")
+        if "--live" in sct and ("REFUSED" in sct or "refuse" in sct.lower()):
+            ok("pmm_sol_basis_scan hard-refuses --live")
+        else:
+            bad("pmm_sol_basis_scan missing --live refuse")
+        if "--allow-fixture" in sct and "ESTIMATE" in sct:
+            ok("pmm_sol_basis_scan has allow-fixture + ESTIMATE labels")
+        else:
+            bad("pmm_sol_basis_scan missing allow-fixture / ESTIMATE")
+
+    if solana_md.exists():
+        sm2 = solana_md.read_text(encoding="utf-8")
+        if "pmm_sol_basis_scan" in sm2 or "SOL–THB basis" in sm2 or "SOL-THB basis" in sm2:
+            ok("docs/SOLANA.md covers SOL–THB basis paper tape")
+        else:
+            bad("docs/SOLANA.md missing SOL–THB basis note")
+
+    if venues_md.exists():
+        vt3 = venues_md.read_text(encoding="utf-8")
+        if "sol_thb" in vt3 or "pmm_sol_basis_scan" in vt3 or "SOL–THB" in vt3:
+            ok("docs/VENUES.md covers SOL–THB basis")
+        else:
+            bad("docs/VENUES.md missing SOL–THB basis note")
+
+    if apis_md.exists():
+        at4 = apis_md.read_text(encoding="utf-8")
+        if "pmm_sol_basis_scan" in at4 or "SOL–THB basis" in at4 or "sol_thb" in at4:
+            ok("docs/APIS.md mentions SOL–THB basis scan")
+        else:
+            bad("docs/APIS.md missing SOL–THB basis scan note")
+
     if custody_md.exists():
         cm = custody_md.read_text(encoding="utf-8")
         if "7W3SPbRcGD1GJPpafEYhgduaMxLpmHBG9KGqytqZEhHf" in cm and "0.001 SOL" in cm:

@@ -55,6 +55,8 @@ src/venues/solana/jupiter_quotes.py   # HTTP quote + price clients
 src/venues/solana/desk_balance.py     # RO pubkey balance via public RPC
 scripts/pmm_sol_tape.py               # CLI Ledger JSON; --live refuse (exit 2)
 src/venues/arb/sol_cex.py             # optional Jupiter vs BNTH stub (unit_mismatch / fixture-kill)
+src/venues/basis/sol_thb.py           # SOL–THB same-ccy + Jupiter×FX basis SCAN
+scripts/pmm_sol_basis_scan.py         # SOL–THB basis CLI (--live refuse)
 docs/SOLANA.md                        # this file
 docs/SOLANA_CUSTODY.md                # desk pubkey + authority (secrets outside repo)
 ```
@@ -88,6 +90,33 @@ python scripts/pmm_sol_tape.py --live   # exit 2
 - Money-path fixture → kill unless `--allow-fixture`.
 - TH fiat rails: Bitkub + BNTH remain primary; Solana is research tape only.
 - Solana live / custody: **not wired** (see `docs/HOLES.md`, `docs/SOLANA_CUSTODY.md`).
+
+
+
+## SOL–THB basis paper tape (slice B)
+
+Paper / read-only **basis scan** comparing:
+
+1. **Same-ccy THB (preferred):** Bitkub `SOL_THB` vs Binance TH `SOLTHB` (`api.binance.th` only) — extend Bitkub↔BNTH BTC basis patterns; **no FX**.
+2. **Jupiter cross-check:** Jupiter SOL/USDC mid × **labeled** `USDTTHB` from BNTH public ticker → THB-equivalent mid vs CEX SOL–THB mid. USDC≈USDT is an **explicit** desk label (never silent invent).
+
+- `net_basis_bps` / fee floors are labeled **ESTIMATE** (paper falsify haircuts).
+- Fixture-kill default; `--live` hard-refuse (exit 2).
+- Fail closed on HTTP errors — never invent mids/FX.
+- No seeds, tips, or Bitkub/BNTH live orders.
+
+```
+src/venues/basis/sol_thb.py
+scripts/pmm_sol_basis_scan.py
+tests/test_sol_thb_basis.py
+```
+
+```bash
+python scripts/pmm_sol_basis_scan.py --paper
+python scripts/pmm_sol_basis_scan.py --paper --prices-only
+python scripts/pmm_sol_basis_scan.py --paper --fixture --allow-fixture --prices-only
+python scripts/pmm_sol_basis_scan.py --live   # exit 2 REFUSED
+```
 
 ## Custody / team authority
 
