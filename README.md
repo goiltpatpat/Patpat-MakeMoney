@@ -1,6 +1,6 @@
 # Patpat-MakeMoney
 
-Independent desk repository for the **Patpat-MakeMoney** team: BTC 5-minute Up/Down markets on [Polymarket](https://polymarket.com), operated paper-first under Ledger.
+Independent desk repository for the **Patpat-MakeMoney** team: multi-venue BTC tape (public data first), with **Bitkub** as the TH primary execution *candidate* (paper skeleton) and **Polymarket** retained as optional/non-primary. Operated paper-first under Ledger.
 
 Derived from [Novals83/5min-btc-polymarket](https://github.com/Novals83/5min-btc-polymarket). This repo is **not** a GitHub fork — see [NOTICE.md](NOTICE.md).
 
