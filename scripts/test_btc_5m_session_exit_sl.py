@@ -300,11 +300,21 @@ PROFILES: dict[str, dict[str, Any]] = {
         'entry_timeout_min': 60,
         'poll_sec': 5.0,
     },
+    # Patpat-MakeMoney desk default — tighter stake/stop; paper-first via missing --execute
+    'desk': {
+        'threshold': 0.72,
+        'stake_usd': 3.0,
+        'stop_loss_pct': 0.20,
+        'exit_before_sec': 20,
+        'min_entry_seconds_left': 60,
+        'entry_timeout_min': 60,
+        'poll_sec': 5.0,
+    },
 }
 
 
 def apply_profile(args: argparse.Namespace) -> argparse.Namespace:
-    prof = PROFILES.get(args.profile or 'conservative', PROFILES['conservative'])
+    prof = PROFILES.get(args.profile or 'desk', PROFILES['desk'])
     if args.threshold is None:
         args.threshold = float(prof['threshold'])
     if args.stake_usd is None:
@@ -332,7 +342,7 @@ def default_repo_path() -> str:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--repo', default=default_repo_path())
-    ap.add_argument('--profile', choices=['conservative', 'aggressive'], default='conservative')
+    ap.add_argument('--profile', choices=['desk', 'conservative', 'aggressive'], default='desk')
     ap.add_argument('--threshold', type=float, default=None)
     ap.add_argument('--stake-usd', type=float, default=None)
     ap.add_argument('--stop-loss-pct', type=float, default=None, help='0.30 means -30%% from entry price')

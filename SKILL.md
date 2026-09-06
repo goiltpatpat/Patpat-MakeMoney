@@ -1,71 +1,58 @@
 ---
-name: btc-5m-live
-description: Run and monitor BTC 5-minute Up/Down trading on Polymarket using momentum-near-close logic (time-left, BTC move, market skew), fixed/controlled sizing, optional micro-hedge, and one-shot or loop execution.
+name: btc-5m-patpat-makemoney
+description: Patpat-MakeMoney desk skill for BTC 5-minute Up/Down on Polymarket — momentum-near-close (time-left, BTC move, skew), paper-first dry-run by default, controlled sizing, optional micro-hedge. Live --execute only after Ledger desk gate.
 ---
 
-# BTC 5m Live
+# BTC 5m · Patpat-MakeMoney
+
+Fork of upstream `btc-5m-live` for the **Patpat-MakeMoney** desk (Ledger Head · Pulse · Grid · Thesis).
 
 ## Paths
-- Main trading repo: `<your-workspace>/pm-hl-conservative-plus-repo` (or set `BTC5M_REPO`)
+- Main trading repo: `<your-workspace>/pm-hl-conservative-plus-repo` (or `BTC5M_REPO`)
 - Core runner: `src/live/pm_live_trade_runner.py`
 - Canonical skill runner: `scripts/test_btc_5m_session_exit_sl.py`
-- Skill control entrypoint: `scripts/btc5m_ctl.sh`
+- Skill control: `scripts/btc5m_ctl.sh`
 - Compatibility wrapper (deprecated): `scripts/run_btc_5m_threshold_test.py`
+- Desk doctrine: `DESK.md`
 
-## Strategy Alignment
-Use this skill when the operator wants to execute a BTC 5m momentum strategy:
-- Entry focus near event close (around 2 minutes left).
-- Confirm meaningful BTC move in the interval (about $70-$100).
-- Prefer direction supported by market skew.
-- Enter with momentum, not against it.
-- Optional small opposite hedge when skew becomes extreme.
+## Strategy alignment
+Use when the desk wants BTC 5m momentum near close:
+- Entry focus ~2 minutes left
+- Confirm meaningful BTC impulse (~$70–$100)
+- Prefer skew-supported direction
+- Enter with momentum, not against it
+- Optional small opposite hedge on extreme skew
 
-## Operational Rules
-- Default is dry-run unless `--execute` is set.
-- Use controlled stake sizing (`--stake-usd`, profile caps).
-- If both UP and DOWN satisfy threshold logic, choose the stronger side.
-- Keep stop-loss and timing guards enabled in profile config.
+## Operational rules (desk)
+- **Default is dry-run** unless `--execute` is set
+- Prefer profile **`desk`** (tighter caps than `aggressive`)
+- Controlled stake (`--stake-usd`, profile caps)
+- If both UP and DOWN clear threshold, take the stronger side
+- Keep stop-loss and timing guards on
+- **Do not** tip buys/sells or promise returns
+- Live path requires Ledger pre-flight + human confirmation
 
-## One-shot real test
+## One-shot paper (default)
 From trading repo root:
 
 ```bash
-.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile conservative --execute
+.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile desk
 ```
 
-Aggressive profile:
-
+## One-shot live (opt-in)
 ```bash
-.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile aggressive --execute
+.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile desk --execute
 ```
 
-Override profile params manually (example):
-
-```bash
-.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile conservative --stake-usd 5 --entry-timeout-min 90 --execute
-```
-
-## Strategy Profiles
+## Profiles
 - File: `config/btc_5m_profiles.yaml`
-- Presets: `conservative`, `aggressive`
-- Includes entry/exit timing, quote staleness checks, spread/liquidity guards, hedge triggers, and risk caps.
+- Presets: `conservative`, `aggressive`, **`desk`** (Patpat-MakeMoney default)
 
-## Hot Commands (chat-friendly)
-Examples:
-- `btc5m conservative start`
-- `btc5m aggressive start`
+## Hot commands
+- `btc5m desk start` (dry unless stack maps execute separately)
+- `scripts/btc5m_ctl.sh start --profile desk`
+- `scripts/btc5m_ctl.sh report --limit 20`
+- `scripts/btc5m_ctl.sh stop`  # kill switch
 
-Handlers:
-- `scripts/btc5m_hot.sh [conservative|aggressive]`
-- `scripts/btc5m_ctl.sh start --profile [conservative|aggressive]`
-- `scripts/btc5m_ctl.sh status|stop|report|logs`
-- completion summary utility: `scripts/btc5m_latest_report.py --mark`
-
-Output:
-- isolated skill runtime logs: `skills/btc-5m-live/runtime/btc5m_<profile>_<UTCSTAMP>.log`
-
-## Notes
-- Canonical runner resolves current BTC 5m market slug (`btc-updown-5m-<bucket>`).
-- Real order placement is delegated to `pm_live_trade_runner.py` with `--force-side` and `--max-notional-usd`.
-- Keep BTC5m automation scoped to this skill contour (`btc5m_ctl.sh` + `skills/btc-5m-live/runtime`) to avoid cross-skill interference.
-- Keep all GitHub-facing docs and metadata in English.
+## Desk report
+After a session, produce a Ledger-ready brief (see `DESK.md`): bias, levels/impulse, skew, result, invalidation, confidence.
