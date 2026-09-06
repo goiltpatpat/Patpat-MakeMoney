@@ -10,6 +10,8 @@ Patpat-MakeMoney/
     STRUCTURE.md          # this file
     RUNTIME.md            # enforced behavior and limitations
   memory-bank/            # local continuity only (gitignored; optional)
+  vendor/
+    pm-hl-conservative-plus-repo/  # execution stack (single-repo SoT)
   config/
     btc_5m_profiles.yaml  # conservative | aggressive | desk
   scripts/

@@ -45,7 +45,7 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 - The force-close path creates an authenticated client and can cancel token orders without a local `args.execute` check. Reposting does not require cancellation success. External response contracts and these paths require a separate safety review before relying on paper/live isolation.
 
 ## External execution stack
-- Team fork: `https://github.com/goiltpatpat/pm-hl-conservative-plus-repo` (from Novals83/polymarket-hl-strategy)
+- Vendored under this repo from Novals83/polymarket-hl-strategy (no separate team GitHub repo)
 - Default local path: `BTC5M_REPO` / sibling `pm-hl-conservative-plus-repo` under the workspace parent (`~/pm-hl-conservative-plus-repo` on this desk)
 - Desk patch: runner accepts `--force-side UP|DOWN` so Patpat-MakeMoney owns entry side (HL signal is advisory when force-side is set)
 - Paper still invokes this stack on every `run_open` / `run_close`; `--execute` only toggles live

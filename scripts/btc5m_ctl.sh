@@ -4,10 +4,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 RUNTIME_DIR="$SKILL_ROOT/runtime"
-# Desk layout: Patpat-MakeMoney and pm-hl live as Desktop siblings.
-DESK_ROOT="$(cd "$SKILL_ROOT/.." && pwd)"
-REPO_DEFAULT="${DESK_ROOT}/pm-hl-conservative-plus-repo"
-# Legacy fallback (pre-Desktop colocation): home-level sibling
+# Single-repo layout: execution stack lives under this skill.
+REPO_DEFAULT="$SKILL_ROOT/vendor/pm-hl-conservative-plus-repo"
+# Legacy fallbacks (Desktop sibling, then home-level)
+if [[ ! -d "$REPO_DEFAULT" ]]; then
+  DESK_ROOT="$(cd "$SKILL_ROOT/.." && pwd)"
+  REPO_DEFAULT="${DESK_ROOT}/pm-hl-conservative-plus-repo"
+fi
 if [[ ! -d "$REPO_DEFAULT" ]]; then
   WORKSPACE_ROOT="$(cd "$SKILL_ROOT/../.." && pwd)"
   REPO_DEFAULT="$WORKSPACE_ROOT/pm-hl-conservative-plus-repo"

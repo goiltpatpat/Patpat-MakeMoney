@@ -10,3 +10,7 @@ It was originally derived from the open-source project:
 Patpat-MakeMoney maintains its own main, risk doctrine (paper-first), desk roles (Ledger / Pulse / Grid / Thesis), and development roadmap. This repo is **not** a GitHub fork of the upstream project.
 
 No endorsement by upstream authors is implied.
+
+## Vendored execution stack
+
+endor/pm-hl-conservative-plus-repo is derived from [Novals83/polymarket-hl-strategy](https://github.com/Novals83/polymarket-hl-strategy) and lives in this repository only.
