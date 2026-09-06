@@ -83,6 +83,30 @@ profiles:
       enabled: true
       stop_loss_pct_from_entry: 0.30
 
+  desk:
+    description: "Patpat-MakeMoney default: tighter filters, lower caps, paper-first desk use under Ledger gate."
+    signal:
+      trigger_source: "clob_best_ask"
+      direction_rule: "follow_stronger_side_over_threshold"
+      threshold_price: 0.72
+    sizing:
+      stake_mode: "fixed_or_cap"
+      stake_usd: 3
+      risk_per_trade_pct_equity: 4
+      max_notional_usd: 5
+      daily_max_loss_pct: 6
+      max_trades_per_day: 8
+    hedge:
+      enabled: true
+      trigger_side_price_gte: 0.95
+      trigger_seconds_left_lte: 40
+      hedge_share_of_main_pct: 2
+      hedge_notional_usd_min: 1
+      hedge_notional_usd_max: 1
+    stop_loss:
+      enabled: true
+      stop_loss_pct_from_entry: 0.20
+
 runner_mapping:
   script: "skills/btc-5m-live/scripts/test_btc_5m_session_exit_sl.py"
   direct_flags_now_supported:
@@ -100,3 +124,4 @@ runner_mapping:
 notes:
   - "Current 5m runner uses threshold/side-strength logic; impulse filter integration can be extended at strategy layer."
   - "Entry behavior: continuous CLOB ask monitoring; if UP/DOWN >= threshold, enter on stronger side."
+  - "Patpat-MakeMoney default desk profile: prefer --profile desk; dry-run unless --execute after Ledger gate."
