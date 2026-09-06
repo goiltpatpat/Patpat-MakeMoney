@@ -42,10 +42,12 @@ Impulse and skew gates are implemented but default off; enable through direct ru
 
 ## Venues (Phase 1)
 - Public BTC tape + optional 1inch research quotes first (scripts/pmm_tape.py)
-- Bitkub = SEC-licensed TH **execution candidate**; paper open+close RT (scripts/pmm_bitkub_paper.py) + day caps; live hard-refused
-- Paper fills -> scripts/pmm_edge_log.py -> runtime/edge_log.jsonl (Thesis falsify; no invented PnL)
+- Bitkub = SEC-licensed TH **primary execution candidate**; paper open+close RT (scripts/pmm_bitkub_paper.py) + day caps; live hard-refused
+- **Binance TH (BNTH)** = **second TH lane** (Gulf / binance.th via api.binance.th only — never api.binance.com); does not replace Bitkub until Thesis pass
+- DEX→CEX arb **SCAN** (scripts/pmm_arb_scan.py): gross vs net with fee stack + non-zero transfer latency buffer + Travel Rule buffer; kill inventing FX; --live hard-refuse; paper/read-only first
+- Paper fills -> scripts/pmm_edge_log.py -> runtime/edge_log.jsonl (venue tags include dex_paper / binance_th_paper); no invented PnL
 - Polymarket stays available but demoted; no tips
-- Thesis cage: pmm_edge_scorecard.py + pmm_tape.py --divergence + pmm_paper_reconcile.py (paper-only; session_closed gated)
+- Thesis cage: pmm_edge_scorecard.py + pmm_tape.py --divergence + pmm_paper_reconcile.py + pmm_arb_scan.py (paper-only; session_closed gated)
 - See docs/VENUES.md
 
 ## Hard rules

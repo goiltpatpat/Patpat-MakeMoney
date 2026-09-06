@@ -15,7 +15,7 @@ _THB_LIKE = {"THB"}
 
 
 def quote_currency(symbol: str) -> Optional[str]:
-    """Best-effort quote currency from symbols like BTCUSDT, WBTC-USD, BTC_THB."""
+    """Best-effort quote currency from symbols like BTCUSDT, WBTC-USD, BTC_THB, BTCTHB."""
     s = (symbol or "").strip().upper().replace("-", "_")
     if not s:
         return None
@@ -25,6 +25,9 @@ def quote_currency(symbol: str) -> Optional[str]:
         return "USDC"
     if s.endswith("USD"):
         return "USD"
+    # Binance TH compact form (e.g. BTCTHB, ETHTHB) — no underscore
+    if s.endswith("THB") and "_" not in s and len(s) > 3:
+        return "THB"
     if "_" in s:
         return s.rsplit("_", 1)[-1]
     return None

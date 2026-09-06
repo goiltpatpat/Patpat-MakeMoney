@@ -313,6 +313,73 @@ def main() -> int:
         else:
             bad("pmm_tape missing --divergence / unit_mismatch")
 
+
+    # Binance TH + DEX→CEX arb SCAN (paper/read-only; second TH lane)
+    bnth_tape = ROOT / "src" / "venues" / "binance_th" / "tape.py"
+    bnth_paper = ROOT / "src" / "venues" / "binance_th" / "paper.py"
+    arb_mod = ROOT / "src" / "venues" / "arb" / "dex_cex.py"
+    arb_cli = ROOT / "scripts" / "pmm_arb_scan.py"
+    for path_, label in (
+        (bnth_tape, "src/venues/binance_th/tape.py"),
+        (bnth_paper, "src/venues/binance_th/paper.py"),
+        (arb_mod, "src/venues/arb/dex_cex.py"),
+        (arb_cli, "scripts/pmm_arb_scan.py"),
+    ):
+        if path_.exists():
+            ok(f"{label} present")
+        else:
+            bad(f"missing {label}")
+
+    if bnth_tape.exists():
+        bt = bnth_tape.read_text(encoding="utf-8")
+        if "api.binance.th" in bt and "api.binance.com" in bt and "never" in bt.lower():
+            ok("binance_th tape pins api.binance.th and refuses api.binance.com")
+        elif "api.binance.th" in bt:
+            ok("binance_th tape references api.binance.th")
+        else:
+            bad("binance_th tape missing api.binance.th")
+        if "api.binance.com" in bt and "BINANCE_TH_API_BASE" in bt:
+            # ensure base is .th not .com
+            if 'BINANCE_TH_API_BASE = "https://api.binance.th"' in bt or "BINANCE_TH_API_BASE = 'https://api.binance.th'" in bt:
+                ok("binance_th API base is https://api.binance.th")
+            else:
+                bad("binance_th API base is not api.binance.th")
+        if venues_md.exists():
+            vt = venues_md.read_text(encoding="utf-8")
+            if "Binance TH" in vt and "api.binance.th" in vt and "Travel Rule" in vt:
+                ok("docs/VENUES.md covers Binance TH + Travel Rule arb doctrine")
+            else:
+                bad("docs/VENUES.md missing Binance TH / Travel Rule arb notes")
+
+    if arb_mod.exists():
+        at = arb_mod.read_text(encoding="utf-8")
+        if "transfer_time_penalty_bps" in at and "travel_rule_buffer_bps" in at and "gross_spread_bps" in at:
+            ok("arb detector has gross/net + latency + Travel Rule buffers")
+        else:
+            bad("arb detector missing fee/latency/Travel Rule stack")
+        if "unit_mismatch" in at and "net_edge_bps" in at:
+            ok("arb detector kills on unit_mismatch / net<=0 path")
+        else:
+            bad("arb detector missing kill rules")
+
+    if arb_cli.exists():
+        ct = arb_cli.read_text(encoding="utf-8")
+        if "--live" in ct and ("REFUSED" in ct or "hard" in ct.lower() or "refuse" in ct.lower()):
+            ok("pmm_arb_scan hard-refuses --live")
+        else:
+            bad("pmm_arb_scan missing --live refuse")
+        if "--paper" in ct:
+            ok("pmm_arb_scan exposes --paper")
+        else:
+            bad("pmm_arb_scan missing --paper")
+
+    if desk.exists():
+        dt = desk.read_text(encoding="utf-8")
+        if "Binance TH" in dt or "BNTH" in dt:
+            ok("DESK.md mentions Binance TH / BNTH second lane")
+        else:
+            bad("DESK.md missing Binance TH / BNTH")
+
     # Guard against sibling-stack regressions in entry docs/wrappers
     sibling_hits = []
     for rel in (
