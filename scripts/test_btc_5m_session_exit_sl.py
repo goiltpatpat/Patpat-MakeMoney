@@ -10,6 +10,12 @@ from pathlib import Path
 
 import requests
 
+from pmm_gates import (
+    evaluate_impulse,
+    evaluate_skew,
+    filter_candidates_by_impulse,
+)
+
 from py_clob_client.client import ClobClient
 from py_clob_client.constants import POLYGON
 from py_clob_client.clob_types import ApiCreds
@@ -290,6 +296,11 @@ PROFILES: dict[str, dict[str, Any]] = {
         'min_entry_seconds_left': 60,
         'entry_timeout_min': 60,
         'poll_sec': 5.0,
+        'impulse_enabled': False,
+        'skew_enabled': False,
+        'btc_move_usd_min': 70.0,
+        'btc_move_usd_max_reference': 100.0,
+        'require_skew_align': True,
     },
     'aggressive': {
         'threshold': 0.70,
@@ -299,6 +310,11 @@ PROFILES: dict[str, dict[str, Any]] = {
         'min_entry_seconds_left': 60,
         'entry_timeout_min': 60,
         'poll_sec': 5.0,
+        'impulse_enabled': False,
+        'skew_enabled': False,
+        'btc_move_usd_min': 70.0,
+        'btc_move_usd_max_reference': 100.0,
+        'require_skew_align': True,
     },
     # Patpat-MakeMoney desk default — tighter stake/stop; paper-first via missing --execute
     'desk': {
@@ -309,6 +325,11 @@ PROFILES: dict[str, dict[str, Any]] = {
         'min_entry_seconds_left': 60,
         'entry_timeout_min': 60,
         'poll_sec': 5.0,
+        'impulse_enabled': False,
+        'skew_enabled': False,
+        'btc_move_usd_min': 80.0,
+        'btc_move_usd_max_reference': 100.0,
+        'require_skew_align': True,
     },
 }
 
@@ -329,6 +350,17 @@ def apply_profile(args: argparse.Namespace) -> argparse.Namespace:
         args.entry_timeout_min = int(prof['entry_timeout_min'])
     if args.poll_sec is None:
         args.poll_sec = float(prof['poll_sec'])
+    # Gate knobs (feature flags default OFF in profiles)
+    if getattr(args, 'impulse_enabled', None) is None:
+        args.impulse_enabled = bool(prof.get('impulse_enabled', False))
+    if getattr(args, 'skew_enabled', None) is None:
+        args.skew_enabled = bool(prof.get('skew_enabled', False))
+    if getattr(args, 'btc_move_usd_min', None) is None:
+        args.btc_move_usd_min = float(prof.get('btc_move_usd_min', 70.0))
+    if getattr(args, 'btc_move_usd_max_reference', None) is None:
+        args.btc_move_usd_max_reference = float(prof.get('btc_move_usd_max_reference', 100.0))
+    if getattr(args, 'require_skew_align', None) is None:
+        args.require_skew_align = bool(prof.get('require_skew_align', True))
     return args
 
 
@@ -353,7 +385,18 @@ def main():
     ap.add_argument('--close-retry-max', type=int, default=18, help='Max close retries when position is not yet visible / not immediately closable')
     ap.add_argument('--close-retry-delay-sec', type=float, default=2.0, help='Delay between close retries')
     ap.add_argument('--execute', action='store_true')
+    ap.add_argument('--impulse-gate', dest='impulse_enabled', action='store_true', default=None,
+                    help='Enable fail-closed BTC impulse gate (default: profile / OFF)')
+    ap.add_argument('--skew-gate', dest='skew_enabled', action='store_true', default=None,
+                    help='Enable fail-closed skew alignment gate (default: profile / OFF)')
+    ap.add_argument('--enable-gates', action='store_true',
+                    help='Enable both impulse and skew gates (overrides profile flags to ON)')
+    ap.add_argument('--btc-move-usd-min', dest='btc_move_usd_min', type=float, default=None)
+    ap.add_argument('--btc-move-usd-max-ref', dest='btc_move_usd_max_reference', type=float, default=None)
     args = apply_profile(ap.parse_args())
+    if args.enable_gates:
+        args.impulse_enabled = True
+        args.skew_enabled = True
 
     report: dict[str, Any] = {
         'started_at': ts_utc(),
@@ -369,6 +412,11 @@ def main():
             'close_retry_max': args.close_retry_max,
             'close_retry_delay_sec': args.close_retry_delay_sec,
             'execute': args.execute,
+            'impulse_enabled': bool(args.impulse_enabled),
+            'skew_enabled': bool(args.skew_enabled),
+            'btc_move_usd_min': args.btc_move_usd_min,
+            'btc_move_usd_max_reference': args.btc_move_usd_max_reference,
+            'require_skew_align': bool(args.require_skew_align),
         },
         'attempts': [],
     }
@@ -419,6 +467,52 @@ def main():
                 time.sleep(args.poll_sec)
                 continue
 
+            # --- impulse gate (fail-closed when enabled; default OFF) ---
+            impulse = evaluate_impulse(
+                slug,
+                enabled=bool(args.impulse_enabled),
+                btc_move_usd_min=float(args.btc_move_usd_min),
+                btc_move_usd_max_reference=float(args.btc_move_usd_max_reference),
+            )
+            if not impulse.ok:
+                report['attempts'].append({
+                    'ts': ts_utc(),
+                    'slug': slug,
+                    'status': impulse.status,
+                    'btc_open': impulse.btc_open,
+                    'btc_now': impulse.btc_now,
+                    'btc_move_usd': impulse.btc_move_usd,
+                    'impulse_dir': impulse.impulse_dir,
+                    'flag_impulse_above_max_reference': impulse.flag_above_max_ref,
+                    'detail': impulse.detail,
+                    'seconds_left': sec_left,
+                })
+                time.sleep(args.poll_sec)
+                continue
+
+            # --- skew gate (fail-closed when enabled; default OFF) ---
+            skew = evaluate_skew(
+                up_ask,
+                dn_ask,
+                enabled=bool(args.skew_enabled),
+                impulse_dir=impulse.impulse_dir if bool(args.impulse_enabled) else None,
+                require_align=bool(args.require_skew_align) and bool(args.impulse_enabled),  # strict triple needs both gates
+            )
+            if not skew.ok:
+                report['attempts'].append({
+                    'ts': ts_utc(),
+                    'slug': slug,
+                    'status': skew.status,
+                    'skew_side': skew.skew_side,
+                    'impulse_dir': impulse.impulse_dir,
+                    'clob_up_ask': up_ask,
+                    'clob_down_ask': dn_ask,
+                    'detail': skew.detail,
+                    'seconds_left': sec_left,
+                })
+                time.sleep(args.poll_sec)
+                continue
+
             report['attempts'].append({
                 'ts': ts_utc(),
                 'slug': slug,
@@ -429,6 +523,14 @@ def main():
                 'clob_down_ask': dn_ask,
                 'seconds_left': sec_left,
                 'min_spread': min_spread,
+                'btc_open': impulse.btc_open,
+                'btc_now': impulse.btc_now,
+                'btc_move_usd': impulse.btc_move_usd,
+                'impulse_dir': impulse.impulse_dir,
+                'skew_side': skew.skew_side,
+                'flag_impulse_above_max_reference': impulse.flag_above_max_ref,
+                'impulse_enabled': bool(args.impulse_enabled),
+                'skew_enabled': bool(args.skew_enabled),
             })
 
             candidates: list[tuple[str, float]] = []
@@ -450,7 +552,40 @@ def main():
                 time.sleep(args.poll_sec)
                 continue
 
+            candidates, anti_status = filter_candidates_by_impulse(
+                candidates,
+                impulse.impulse_dir,
+                enabled=bool(args.impulse_enabled),
+            )
+            if anti_status:
+                report['attempts'].append({
+                    'ts': ts_utc(),
+                    'slug': slug,
+                    'status': anti_status,
+                    'impulse_dir': impulse.impulse_dir,
+                    'threshold': args.threshold,
+                    'clob_up_ask': up_ask,
+                    'clob_down_ask': dn_ask,
+                    'seconds_left': sec_left,
+                })
+                time.sleep(args.poll_sec)
+                continue
+
             side, trigger_price = sorted(candidates, key=lambda x: x[1], reverse=True)[0]
+
+            # Defensive: strict desk alignment when both gates on
+            if args.impulse_enabled and args.skew_enabled and args.require_skew_align:
+                if side != impulse.impulse_dir or (skew.skew_side and side != skew.skew_side):
+                    report['attempts'].append({
+                        'ts': ts_utc(),
+                        'slug': slug,
+                        'status': 'skip_side_impulse_mismatch',
+                        'side': side,
+                        'impulse_dir': impulse.impulse_dir,
+                        'skew_side': skew.skew_side,
+                    })
+                    time.sleep(args.poll_sec)
+                    continue
 
             out, objs = run_open(args.repo, slug, side, args.stake_usd, args.execute)
             post = None

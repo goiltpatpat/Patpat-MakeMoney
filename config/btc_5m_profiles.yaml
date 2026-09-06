@@ -11,6 +11,18 @@ strategy_reference:
   skew_bias_note: "Prefer direction supported by market skew when momentum is already established."
   sizing_note: "Typical discretionary sizing can be up to ~50% of allocated trading balance; tune risk per user preference."
   optional_hedge_note: "When skew is extreme (for example >=95/5), allow a small opposite hedge to reduce last-second reversal risk."
+  gates:
+    impulse_enabled_default: false
+    skew_enabled_default: false
+    desk_btc_move_usd_min: 80
+    conservative_btc_move_usd_min: 70
+    aggressive_btc_move_usd_min: 70
+    btc_move_usd_max_reference: 100
+    max_reference_is_hard_reject: false
+    require_skew_align: true
+    btc_feed_primary: "binance_btcusdt"
+    fail_closed: true
+    enable_cli: "--enable-gates | --impulse-gate | --skew-gate"
 
 shared_rules:
   market_validation:
@@ -122,8 +134,10 @@ runner_mapping:
   example_aggressive_now: ".venv/bin/python scripts/test_btc_5m_session_exit_sl.py --threshold 0.70 --stake-usd 6 --stop-loss-pct 0.30 --exit-before-sec 20 --min-entry-seconds-left 60 --entry-timeout-min 60 --poll-sec 5 --execute"
 
 notes:
-  - "FACT: runner enforces threshold/side-strength + time floor only."
-  - "FACT: strategy_reference impulse ($70-100) and skew notes are NOT hard gates in test_btc_5m_session_exit_sl.py yet."
-  - "Entry behavior today: continuous CLOB ask monitoring; if UP/DOWN >= threshold, enter on stronger side."
-  - "Planned: hard-gate impulse + skew (Patpat-MakeMoney desk) after docs alignment."
+  - "FACT: baseline runner always enforces time floor + CLOB ask threshold + stronger-side."
+  - "FACT: impulse+skew hard gates exist in scripts/pmm_gates.py; DEFAULT OFF; enable --enable-gates (fail-closed)."
+  - "FACT: btc_open is Binance 1m open at bucket open_ts from slug; max $100 is soft flag only."
+  - "FACT: --skew-gate alone = ask availability/tie checks; strict impulse∩skew∩side needs --enable-gates (both)."
+  - "Entry with gates OFF: continuous CLOB ask monitoring; if UP/DOWN >= threshold, enter on stronger side."
   - "Patpat-MakeMoney default desk profile: prefer --profile desk; dry-run unless --execute after Ledger gate."
+  - "Gates default OFF; enable with --enable-gates (or --impulse-gate / --skew-gate). Fail-closed on feed errors."
