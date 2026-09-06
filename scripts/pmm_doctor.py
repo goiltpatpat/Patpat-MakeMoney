@@ -415,6 +415,67 @@ def main() -> int:
         else:
             bad("bitkub day caps loader missing utf-8-sig")
 
+
+    # Bitkub <-> BNTH same-ccy THB basis monitor (paper/read-only)
+    basis_mod = ROOT / "src" / "venues" / "basis" / "bitkub_bnth.py"
+    basis_cli = ROOT / "scripts" / "pmm_basis_scan.py"
+    for path_, label in (
+        (basis_mod, "src/venues/basis/bitkub_bnth.py"),
+        (basis_cli, "scripts/pmm_basis_scan.py"),
+    ):
+        if path_.exists():
+            ok(f"{label} present")
+        else:
+            bad(f"missing {label}")
+
+    if basis_mod.exists():
+        bt = basis_mod.read_text(encoding="utf-8")
+        if "basis_bps" in bt and "api.binance.th" in bt and "unit_mismatch" in bt:
+            ok("basis module has basis_bps + api.binance.th + unit_mismatch kill")
+        else:
+            bad("basis module missing core same-ccy THB wiring")
+        if "money_leg_source_fixture" in bt and "sign_convention" in bt:
+            ok("basis module documents sign convention + fixture kill")
+        else:
+            bad("basis module missing sign convention / fixture kill")
+        if "net_basis_bps" in bt and "fee_floor" in bt:
+            ok("basis module has gross vs net fee floor")
+        else:
+            bad("basis module missing net_basis_bps / fee floor")
+
+    if basis_cli.exists():
+        ct = basis_cli.read_text(encoding="utf-8")
+        if "--live" in ct and ("REFUSED" in ct or "refuse" in ct.lower()):
+            ok("pmm_basis_scan hard-refuses --live")
+        else:
+            bad("pmm_basis_scan missing --live refuse")
+        if "--poll" in ct and ("--persist-sec" in ct or "--min-persist-sec" in ct):
+            ok("pmm_basis_scan exposes --poll / persist duration filter")
+        else:
+            bad("pmm_basis_scan missing --poll / persist")
+
+    if venues_md.exists():
+        vt2 = venues_md.read_text(encoding="utf-8")
+        if "same-ccy" in vt2.lower() or "same-currency" in vt2.lower() or "bitkub_bnth" in vt2.lower():
+            ok("docs/VENUES.md covers Bitkub<->BNTH basis")
+        else:
+            bad("docs/VENUES.md missing Bitkub<->BNTH basis notes")
+
+    if apis_md.exists():
+        at3 = apis_md.read_text(encoding="utf-8")
+        if "pmm_basis_scan" in at3 or "same-currency basis" in at3.lower() or "same-ccy" in at3.lower():
+            ok("docs/APIS.md mentions basis scan")
+        else:
+            bad("docs/APIS.md missing basis scan note")
+
+    if desk.exists():
+        dt2 = desk.read_text(encoding="utf-8")
+        if "basis" in dt2.lower() and ("pmm_basis_scan" in dt2 or "Bitkub" in dt2):
+            ok("DESK.md mentions Bitkub<->BNTH basis")
+        else:
+            bad("DESK.md missing basis monitor note")
+
+
     # Guard against sibling-stack regressions in entry docs/wrappers
     sibling_hits = []
     for rel in (

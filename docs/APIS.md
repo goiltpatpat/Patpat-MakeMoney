@@ -50,6 +50,7 @@ Module: `src/venues/oneinch_quotes.py`.
 | `ONEINCH_API_KEY` | Optional 1inch Spot Price Bearer (read-only) |
 | `PMM_BINANCE_TH_FIXTURE=1` | BNTH offline fixture ticker |
 | `PMM_ARB_ALLOW_FIXTURE=1` | Permit fixture mids in arb opportunity output (tests only; default OFF) |
+| `PMM_BASIS_ALLOW_FIXTURE=1` | Permit fixture mids in basis scan (tests only; default OFF) |
 | `PMM_BITKUB_LIVE_OK` | Documented future Bitkub live gate — **not honored** by paper module |
 | `PMM_LIVE_OK` | Polymarket / desk live gate (separate stack) |
 | `BITKUB_API_KEY` / `BITKUB_API_SECRET` | Placeholders for future live — unused by paper |
@@ -63,6 +64,7 @@ Secrets stay in `.env` / env; never commit real keys.
 | `pmm_tape.py` | Public read-only | N/A |
 | `pmm_bitkub_paper.py` | Paper RT | `--live` hard-refuse |
 | `pmm_arb_scan.py` | Paper SCAN | `--live` hard-refuse (exit 2) |
+| `pmm_basis_scan.py` | Paper same-ccy THB basis SCAN | `--live` hard-refuse (exit 2) |
 | Fixture money briefs | **Killed** (`money_leg_source_fixture`) | Offline only with `--allow-fixture` |
 
 ## Travel Rule note (Feb 2027)
@@ -76,7 +78,7 @@ Vendor/regulatory timelines around **Feb 2027** are a planning marker — re-che
 
 Falsifiable screens — **not tipster**. See also `DESK.md` / `docs/HOLES.md`.
 
-1. **Bitkub ↔ BNTH same-currency basis** — BTC_THB vs BTCTHB mids; report spread in THB only; kill if units mismatch.
+1. **Bitkub ↔ BNTH same-currency basis** — BTC_THB vs BTCTHB mids via `src/venues/basis/bitkub_bnth.py` + `scripts/pmm_basis_scan.py`; `basis_bps = (bnth-bitkub)/mid*1e4`; gross vs `net_basis_bps` after labeled taker haircuts; duration filter optional; kill unit_mismatch / fixture / stale; **no FX**; api.binance.th only. OSS shape inspiration only (barbotine same-ccy / unicorn sync flag) — **no vendoring**.
 2. **Funding / spread screen on TH books** — public bookTicker / depth when available; log basis vs fee floor; no invented prints.
 3. **Desk scorecard cadence** — `pmm_edge_scorecard.py` on `edge_log.jsonl` only; N fills, mean realized from logged fields; day-cap stops from state file.
 

@@ -46,7 +46,7 @@ Impulse and skew gates are implemented but default off; enable through direct ru
 - **Binance TH (BNTH)** = **second TH lane** (Gulf / binance.th via api.binance.th only — never api.binance.com); does not replace Bitkub until Thesis pass
 - DEX→CEX arb **SCAN** (scripts/pmm_arb_scan.py): gross vs net with fee stack + non-zero transfer latency buffer + Travel Rule buffer; kill inventing FX; **fixture-kill** on money path (need `--allow-fixture` for offline); --live hard-refuse; paper/read-only first
 - API inventory: `docs/APIS.md`; holes log: `docs/HOLES.md`
-- Other paper-only research (falsifiable, not tipster): Bitkub↔BNTH same-currency basis; TH book spread/funding screen; desk scorecard cadence on edge_log
+- Other paper-only research (falsifiable, not tipster): **Bitkub↔BNTH same-currency THB basis** (`scripts/pmm_basis_scan.py` — gross vs net after fee haircuts; kill FX/fixture/stale; `--live` refuse); TH book spread/funding screen; desk scorecard cadence on edge_log
 - Paper fills -> scripts/pmm_edge_log.py -> runtime/edge_log.jsonl (venue tags include dex_paper / binance_th_paper); no invented PnL
 - Polymarket stays available but demoted; no tips
 - Thesis cage: pmm_edge_scorecard.py + pmm_tape.py --divergence + pmm_paper_reconcile.py + pmm_arb_scan.py (paper-only; session_closed gated)
