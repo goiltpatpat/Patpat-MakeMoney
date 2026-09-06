@@ -14,7 +14,7 @@ scripts/pmm_ctl.sh start --profile desk
 
 ```bash
 python scripts/pmm_doctor.py
-python -m unittest tests.test_desk_safety
+python3 -m unittest discover -s tests -v
 ```
 
 ## Live (opt-in only after Ledger desk gate)

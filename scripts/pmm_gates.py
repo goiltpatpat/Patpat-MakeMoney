@@ -2,6 +2,7 @@
 """Patpat-MakeMoney impulse + skew gates (fail-closed). Feature flags default OFF."""
 from __future__ import annotations
 
+import math
 import time
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -97,7 +98,9 @@ def evaluate_impulse(
         return ImpulseResult(ok=True, status="impulse_gate_disabled")
 
     try:
-        btc_open = ensure_btc_open(slug)
+        btc_open = float(ensure_btc_open(slug))
+        if not math.isfinite(btc_open) or btc_open <= 0:
+            raise ValueError("invalid_btc_open")
     except Exception as e:
         return ImpulseResult(
             ok=False,
@@ -106,7 +109,9 @@ def evaluate_impulse(
         )
 
     try:
-        btc_now = fetch_binance_btcusdt()
+        btc_now = float(fetch_binance_btcusdt())
+        if not math.isfinite(btc_now) or btc_now <= 0:
+            raise ValueError("invalid_btc_price")
     except Exception as e:
         return ImpulseResult(
             ok=False,
@@ -177,7 +182,12 @@ def evaluate_skew(
     if up_ask is None or dn_ask is None:
         return SkewResult(ok=False, status="skip_skew_ask_unavailable")
 
-    up_v, dn_v = float(up_ask), float(dn_ask)
+    try:
+        up_v, dn_v = float(up_ask), float(dn_ask)
+    except (TypeError, ValueError, OverflowError):
+        return SkewResult(ok=False, status="skip_skew_ask_unavailable")
+    if any(not math.isfinite(value) or not 0 < value <= 1 for value in (up_v, dn_v)):
+        return SkewResult(ok=False, status="skip_skew_ask_unavailable")
     if up_v == dn_v:
         return SkewResult(ok=False, status="skip_skew_tie", detail={"up_ask": up_v, "dn_ask": dn_v})
 

@@ -1,4 +1,28 @@
+# Python environments and generated caches
 __pycache__/
-*.pyc
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Local credentials; sanitized examples may be versioned
 .env
 .env.*
+!.env.example
+!.env.*.example
+
+# Runner logs, process metadata, and report state
+/runtime/
+
+# Local project memory
+/memory-bank/
+
+# Local operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini

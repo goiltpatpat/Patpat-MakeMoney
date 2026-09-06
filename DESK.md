@@ -17,7 +17,7 @@ Specialists report to Ledger. This repo is a tool under the Head, not a signal b
 3. Optional skill **dry-run** (`--profile desk`, no `--execute`)
 4. Human go-ahead
 5. Live `--execute` only if still valid
-6. Kill switch ready: `scripts/btc5m_ctl.sh stop`
+6. Process stop ready: `scripts/btc5m_ctl.sh stop` (does not cancel orders or close positions).
 
 ## Ledger session brief (paste template)
 
@@ -32,12 +32,12 @@ Profile: desk | conservative | aggressive
 Result / fills (fact only):
 Invalidation:
 Confidence: high | medium | low
-Kill switch: btc5m_ctl.sh stop
+Process stop: btc5m_ctl.sh stop (orders and positions require separate handling)
 ```
 
 ## Reality check (runner)
 Enforced today: market slot + time floor + CLOB ask threshold + stronger-side + paper-first ctl/hot/watch.
-Not enforced yet: impulse USD move, skew support (see Grid FACT). Treat those as checklist / Thesis inputs until gates land.
+Impulse and skew gates are implemented but default off; enable through direct runner flags (see `docs/RUNTIME.md`). Human sign-off remains an operating procedure, not a persisted approval gate.
 
 ## Hard rules
 - No personalized financial advice

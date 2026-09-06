@@ -8,6 +8,8 @@ Patpat-MakeMoney/
   SKILL.md                # OpenClaw skill definition
   docs/
     STRUCTURE.md          # this file
+    RUNTIME.md            # enforced behavior and limitations
+  memory-bank/            # local continuity only (gitignored; optional)
   config/
     btc_5m_profiles.yaml  # conservative | aggressive | desk
   scripts/

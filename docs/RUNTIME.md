@@ -27,7 +27,14 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 
 ## Paper-first control paths
 - `scripts/pmm_ctl.sh` / `btc5m_ctl.sh start` → dry unless `--live|--execute`
-- Prove: `python scripts/pmm_doctor.py` and `python -m unittest tests.test_desk_safety tests.test_pmm_gates`
+- Prove: `python scripts/pmm_doctor.py` and `python3 -m unittest discover -s tests -v`
+
+## Known local limitations
+- Runner profiles are hardcoded; YAML daily-loss, maximum-trades, and hedge settings are not consumed.
+- `run_open` defaults spread/liquidity environment guards to permissive values; YAML values do not establish execution protection.
+- Ledger/human approval is an operating procedure, not a persisted technical approval gate.
+- `btc5m_ctl.sh stop` kills the runner process only; it does not cancel orders or close positions.
+- The force-close path creates an authenticated client and can cancel token orders without a local `args.execute` check. Reposting does not require cancellation success. External response contracts and these paths require a separate safety review before relying on paper/live isolation.
 
 ## External / unverified
 - Sibling `pm-hl-conservative-plus-repo` live readiness

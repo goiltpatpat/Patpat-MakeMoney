@@ -1,0 +1,2 @@
+# Keep executable scripts usable across Windows and Linux checkouts.
+*.sh text eol=lf

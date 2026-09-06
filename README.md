@@ -1,127 +1,137 @@
-# Patpat-MakeMoney · BTC 5m Polymarket
+# Patpat-MakeMoney
 
-**Independent Patpat-MakeMoney desk repo** (derived from [Novals83/5min-btc-polymarket](https://github.com/Novals83/5min-btc-polymarket); not a GitHub fork).
+Independent desk repository for the **Patpat-MakeMoney** team: BTC 5-minute Up/Down markets on [Polymarket](https://polymarket.com), operated paper-first under Ledger.
 
-Owned by: [`goiltpatpat/Patpat-MakeMoney`](https://github.com/goiltpatpat/Patpat-MakeMoney)  
-Workspace: `C:\Users\peat_\Desktop\Patpat-MakeMoney`
+Derived from [Novals83/5min-btc-polymarket](https://github.com/Novals83/5min-btc-polymarket). This repo is **not** a GitHub fork — see [NOTICE.md](NOTICE.md).
 
-OpenClaw skill for **BTC 5-minute Up/Down** markets on Polymarket — momentum near expiry, configurable risk, optional micro-hedge.
+> Not financial advice. Not a tipster. **Dry-run / paper is the default.** Live execution requires an explicit `--live` / `--execute` opt-in after desk pre-flight. No promised returns.
 
-> Not a tipster. Not financial advice. **Paper / dry-run is the default.** Live `--execute` is opt-in only after desk pre-flight.
+## Team desk
 
-## Desk operating model
+| Role | Agent | Responsibility |
+|------|--------|----------------|
+| Head | **Ledger** | Prioritize, assign, synthesize, gate live |
+| Scout | **Pulse** | CT/FinTwit + wires → intake |
+| Structure | **Grid** | Levels, bias, invalidation |
+| Catalyst map | **Thesis** | News ↔ chart; falsify unsafe claims |
 
-| Role | Bot | Job |
-|------|-----|-----|
-| Head | **Ledger** | Decide what to analyze, assign work, synthesize the final read, gate live runs |
-| Scout | **Pulse** | CT/FinTwit + wires → intake (matters vs noise) |
-| Structure | **Grid** | Levels, timeframe bias, invalidation |
-| Catalyst map | **Thesis** | News ↔ chart agree/conflict, next event |
+**Flow:** Pulse / Grid / Thesis → Ledger desk read → optional skill dry-run → human go-ahead → live
 
-Flow: **Pulse / Grid / Thesis → Ledger desk read → (optional) this skill dry-run → human go-ahead → live**
+Doctrine and session template: [`DESK.md`](DESK.md)
 
-See [`DESK.md`](DESK.md) for the paste-ready session brief format and kill-switch rules.
+## What this repo is
 
-## Strategy (Momentum into Close)
+An OpenClaw-oriented **skill + control surface** for short-horizon BTC 5m momentum-into-close:
 
-**What the runner enforces today (FACT):**
-1. Trade BTC 5m Up/Down near expiry on Polymarket.
-2. Skip if seconds left &lt; `min_entry_seconds_left` (default 60; desk prefers ~120s window in docs).
-3. Read CLOB best asks for UP/DOWN; if ask ≥ profile `threshold`, take the **stronger** side.
-4. Optional stop-loss / exit-before timing; live only with `--execute` / `--live` after desk gate.
-5. Sizing from profile caps (default profile: **`desk`**).
+- Canonical runner: `scripts/test_btc_5m_session_exit_sl.py`
+- Team entry: `scripts/pmm_ctl.sh` (wraps `btc5m_ctl.sh`)
+- Safety doctor: `scripts/pmm_doctor.py`
+- Optional hard gates: `scripts/pmm_gates.py` (impulse + skew; **default OFF**)
 
-**Doctrine / planned (NOT hard-gated in `test_btc_5m_session_exit_sl.py` yet):**
-- BTC impulse ~$70–$100 in the active interval
-- Skew support (enter with momentum, not against flow)
-- Extreme-skew micro-hedge (~95/5)
+Runtime truth (enforced vs optional): [`docs/RUNTIME.md`](docs/RUNTIME.md)  
+Layout: [`docs/STRUCTURE.md`](docs/STRUCTURE.md)
 
-See `docs/RUNTIME.md`. Gates are next after docs alignment.
+## Strategy — enforced today
 
-## Repository structure
+1. Resolve the active Polymarket BTC 5m Up/Down slot.
+2. Skip if too little time remains (`min_entry_seconds_left`).
+3. Read CLOB best asks; if ask ≥ profile threshold, take the **stronger** side.
+4. Apply profile sizing / stop-loss / exit-before timing.
+5. Open only when `--execute` is set (otherwise paper/dry).
 
-See [`docs/STRUCTURE.md`](docs/STRUCTURE.md).
+Default profile: **`desk`** (tighter caps than `conservative` / `aggressive`).
 
-- `DESK.md` — doctrine + Ledger brief template
-- `SKILL.md` / `CONTOUR.md` — skill + runner contour
-- `config/btc_5m_profiles.yaml` — `desk` (default), `conservative`, `aggressive`
-- `scripts/pmm_ctl.sh` — **team entry** (paper-first)
-- `scripts/pmm_doctor.py` + `tests/` — safety gates before merge/live
-- `scripts/btc5m_*` — upstream-compatible internals
+### Optional gates (default OFF)
 
-## Deploy / Run
+Enable with `--enable-gates` (or `--impulse-gate` / `--skew-gate`):
 
-### Prerequisites
+| Gate | Source | Behavior |
+|------|--------|----------|
+| Impulse | Binance `BTCUSDT` (bucket-open kline vs now) | Fail-closed; desk min move **$80** |
+| Skew | CLOB best asks | Fail-closed; with both gates ON require `impulse_dir == skew_side == entry_side` |
+| Max move $100 | Soft flag only | Does **not** hard-reject |
 
-- OpenClaw environment
-- Polymarket execution stack at `<your-workspace>/pm-hl-conservative-plus-repo` (or `BTC5M_REPO`)
-- Python venv for runners
-- API credentials **outside** this repo (never commit secrets)
+## Quick start
 
-### Clone (team)
+### 1) Clone
 
 ```bash
 git clone https://github.com/goiltpatpat/Patpat-MakeMoney.git
 cd Patpat-MakeMoney
+```
+
+Optional reference remote (not a fork parent):
+
+```bash
 git remote add upstream https://github.com/Novals83/5min-btc-polymarket.git
 ```
 
-### Paper-first (required first path)
+### 2) Safety checks (no secrets required)
 
 ```bash
-# dry-run — NO --execute
-.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile desk
-# or
-scripts/pmm_ctl.sh start --profile desk
-scripts/pmm_ctl.sh status
-scripts/pmm_doctor.py
-scripts/pmm_ctl.sh report --limit 20
-scripts/pmm_ctl.sh stop
+python scripts/pmm_doctor.py
+PYTHONPATH=scripts python -m unittest tests.test_desk_safety tests.test_pmm_gates
 ```
 
-### Live (opt-in only)
+### 3) Paper path (required before any live)
 
-Only after Ledger desk pre-flight + human confirmation:
+**Prerequisites**
+
+- Python environment for the runner
+- External Polymarket execution stack at `$BTC5M_REPO` (default sibling path `pm-hl-conservative-plus-repo` — **not shipped in this repo**)
+- Credentials only in that stack’s `.env` / `BTC5M_ENV_FILE` (never commit secrets)
+
+```bash
+# dry-run — do NOT pass --execute
+python scripts/test_btc_5m_session_exit_sl.py --profile desk
+
+# with optional impulse+skew gates still paper
+python scripts/test_btc_5m_session_exit_sl.py --profile desk --enable-gates
+
+# ctl (paper by default)
+scripts/pmm_ctl.sh start --profile desk
+scripts/pmm_ctl.sh status
+scripts/pmm_ctl.sh stop   # kill switch
+```
+
+### 4) Live (opt-in only)
+
+Only after Ledger pre-flight **and** explicit human confirmation:
 
 ```bash
 scripts/pmm_ctl.sh start --profile desk --live
 # or
-.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile desk --execute
+python scripts/test_btc_5m_session_exit_sl.py --profile desk --enable-gates --execute
 ```
 
-## Execution checklist (before any live order)
+## Pre-live checklist
 
-1. Market validity — BTC 5m active, not unexpectedly closing
-2. Time-to-close — prefer ~120s left
-3. Impulse / skew — **desk checklist** (doctrine); not yet enforced by runner code
-4. Threshold / stronger-side — **enforced** by runner
-5. Liquidity / spread — yaml guards; runner delegates some to external stack (verify)
-6. Sizing — stake, max notional, daily loss
-7. Stop / exit — stop-loss + `exit_before_sec`
-8. Mode — dry-run first; `--execute` only after validation
-9. **Desk gate** — Ledger sign-off; kill switch known (`btc5m_ctl.sh stop`)
+1. `pmm_doctor.py` PASS  
+2. Paper dry-run with the intended flags (gates on/off as decided)  
+3. Market valid; time window sane  
+4. Impulse/skew logs sensible if gates enabled  
+5. Stake / daily loss / kill switch known  
+6. Human go-ahead recorded  
 
-## Risk controls (desk baseline)
+## Repository map
 
-- Prefer **`desk`** profile for Patpat-MakeMoney
-- Per-trade risk, daily max loss, max trades/day, max notional
-- Quote staleness / spread / liquidity guards
-- Optional extreme-skew hedge
-- Operational kill switch on repeated API/DNS/execution failures
-
-## Sync from upstream
-
-```bash
-git fetch upstream
-git checkout main
-git merge upstream/main   # or rebase; resolve conflicts carefully
-```
+| Path | Purpose |
+|------|---------|
+| `DESK.md` | Desk doctrine + Ledger brief template |
+| `SKILL.md` / `CONTOUR.md` | Skill contract + runner contour |
+| `NOTICE.md` | Independence + upstream attribution |
+| `config/btc_5m_profiles.yaml` | `desk` / `conservative` / `aggressive` |
+| `scripts/pmm_ctl.sh` | Team control entry (paper-first) |
+| `scripts/pmm_gates.py` | Optional impulse/skew gates |
+| `scripts/pmm_doctor.py` | Static safety gates |
+| `scripts/btc5m_*` | Upstream-compatible internals |
+| `tests/` | Desk + gate unit tests |
+| `examples/run-example.md` | Command examples |
 
 ## Risk notice
 
-Educational / operational infrastructure for the Patpat-MakeMoney desk.  
-No promised returns. No auto-live trading without explicit human go-ahead.
+Operational / educational infrastructure for the Patpat-MakeMoney desk. Markets can and will lose money. This repository does not guarantee edge, fills, or PnL. Live trading is a gated exception, never the default.
 
 ## Attribution
 
-See [NOTICE.md](NOTICE.md). Inspired by / originally derived from [Novals83/5min-btc-polymarket](https://github.com/Novals83/5min-btc-polymarket). This repository is independent team property of Patpat-MakeMoney.
+See [NOTICE.md](NOTICE.md). Inspired by / originally derived from [Novals83/5min-btc-polymarket](https://github.com/Novals83/5min-btc-polymarket).
