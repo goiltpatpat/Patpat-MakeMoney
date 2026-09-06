@@ -1,19 +1,32 @@
-# Example commands
+# Patpat-MakeMoney — example commands
 
-Dry-run (safe validation):
+## Paper / dry-run (default — safe)
 
 ```bash
-.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile conservative
+# team entry
+scripts/pmm_ctl.sh start --profile desk
+
+# or direct runner (no --execute)
+.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile desk
 ```
 
-Real execution (conservative):
+## Doctor / unit safety checks (no API keys)
 
 ```bash
-.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile conservative --execute
+python scripts/pmm_doctor.py
+python -m unittest tests.test_desk_safety
 ```
 
-Real execution (aggressive):
+## Live (opt-in only after Ledger desk gate)
 
 ```bash
-.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile aggressive --execute
+scripts/pmm_ctl.sh start --profile desk --live
+# equivalent:
+.venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile desk --execute
+```
+
+## Kill switch
+
+```bash
+scripts/pmm_ctl.sh stop
 ```

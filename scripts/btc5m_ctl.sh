@@ -20,15 +20,18 @@ mkdir -p "$RUNTIME_DIR"
 usage() {
   cat <<'EOF'
 Usage:
-  btc5m_ctl.sh start [--profile conservative|aggressive] [--entry-timeout-min N] [--stake-usd N] [--threshold N] [--poll-sec N] [--close-retry-max N] [--close-retry-delay-sec N]
+  btc5m_ctl.sh start [--profile desk|conservative|aggressive] [--live|--execute] [--entry-timeout-min N] [--stake-usd N] [--threshold N] [--poll-sec N] [--close-retry-max N] [--close-retry-delay-sec N]
   btc5m_ctl.sh status
   btc5m_ctl.sh stop
   btc5m_ctl.sh report [--limit N]
   btc5m_ctl.sh logs
 
 Notes:
-- Runs in isolated skill runtime: skills/btc-5m-live/runtime
-- Uses auth/env from pm-hl-conservative-plus-repo/.env
+- Patpat-MakeMoney: start is PAPER/dry-run by default. Pass --live or --execute for real orders.
+- Default profile: desk
+- Runtime: ./runtime (skill-isolated)
+- Auth/env: pm-hl-conservative-plus-repo/.env (or BTC5M_ENV_FILE)
+- Team alias: scripts/pmm_ctl.sh
 EOF
 }
 
@@ -43,17 +46,19 @@ is_running() {
 }
 
 cmd_start() {
-  local profile="conservative"
+  local profile="desk"
   local entry_timeout_min="35"
   local stake_usd=""
   local threshold=""
   local poll_sec="2"
   local close_retry_max="30"
   local close_retry_delay_sec="2"
+  local live=0
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --profile) profile="$2"; shift 2;;
+      --live|--execute) live=1; shift;;
       --entry-timeout-min) entry_timeout_min="$2"; shift 2;;
       --stake-usd) stake_usd="$2"; shift 2;;
       --threshold) threshold="$2"; shift 2;;
@@ -74,7 +79,13 @@ cmd_start() {
   log="$RUNTIME_DIR/btc5m_${profile}_${ts}.log"
 
   local -a runner_cmd
-  runner_cmd=("$VENV_PY" "$RUNNER" "--profile" "$profile" "--entry-timeout-min" "$entry_timeout_min" "--poll-sec" "$poll_sec" "--close-retry-max" "$close_retry_max" "--close-retry-delay-sec" "$close_retry_delay_sec" "--execute")
+  runner_cmd=("$VENV_PY" "$RUNNER" "--profile" "$profile" "--entry-timeout-min" "$entry_timeout_min" "--poll-sec" "$poll_sec" "--close-retry-max" "$close_retry_max" "--close-retry-delay-sec" "$close_retry_delay_sec")
+  if [[ "$live" -eq 1 ]]; then
+    runner_cmd+=("--execute")
+    echo "WARNING: LIVE mode (--execute). Patpat-MakeMoney desk gate required."
+  else
+    echo "mode=dry-run (paper). Pass --live to execute real orders."
+  fi
   [[ -n "$stake_usd" ]] && runner_cmd+=("--stake-usd" "$stake_usd")
   [[ -n "$threshold" ]] && runner_cmd+=("--threshold" "$threshold")
 
@@ -104,7 +115,9 @@ cmd_start() {
   "closeRetryMax": $close_retry_max,
   "closeRetryDelaySec": $close_retry_delay_sec,
   "log": "$log",
-  "repo": "$REPO"
+  "repo": "$REPO",
+  "live": $live,
+  "team": "Patpat-MakeMoney"
 }
 JSON
 

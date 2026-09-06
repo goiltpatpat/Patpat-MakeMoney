@@ -4,7 +4,8 @@ Single source of truth for runners on the team fork.
 
 ## Canonical execution path
 - Strategy runner (canonical): `scripts/test_btc_5m_session_exit_sl.py`
-- Unified control: `scripts/btc5m_ctl.sh` (`start|status|stop|report|logs`)
+- Team entry: `scripts/pmm_ctl.sh`
+- Unified control: `scripts/btc5m_ctl.sh` (paper-first; `--live` to execute) (`start|status|stop|report|logs`)
 - Compatibility wrapper (deprecated): `scripts/run_btc_5m_threshold_test.py`
 - Chat/start helper: `scripts/btc5m_hot.sh`
 - Watch helper: `scripts/watch_btc_5m_threshold_and_enter.sh`
@@ -15,7 +16,7 @@ Single source of truth for runners on the team fork.
 
 ## Default mode
 - Paper / dry-run unless `--execute`
-- Prefer profile **`desk`** for Patpat-MakeMoney
+- Prefer profile **`desk`**; doctor: `scripts/pmm_doctor.py`
 
 ## External dependency boundary
 - Order engine: `<your-workspace>/pm-hl-conservative-plus-repo/src/live/pm_live_trade_runner.py`

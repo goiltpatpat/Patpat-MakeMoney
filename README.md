@@ -37,12 +37,14 @@ This is momentum-following, not mean-reversion.
 
 ## Repository structure
 
-- `DESK.md` — Patpat-MakeMoney operating doctrine + Ledger report template
-- `SKILL.md` — skill definition and operating rules
-- `CONTOUR.md` — canonical runners and dependency boundary
-- `config/btc_5m_profiles.yaml` — `conservative`, `aggressive`, **`desk`**
-- `scripts/` — runners / ctl / reports
-- `examples/` — command examples
+See [`docs/STRUCTURE.md`](docs/STRUCTURE.md).
+
+- `DESK.md` — doctrine + Ledger brief template
+- `SKILL.md` / `CONTOUR.md` — skill + runner contour
+- `config/btc_5m_profiles.yaml` — `desk` (default), `conservative`, `aggressive`
+- `scripts/pmm_ctl.sh` — **team entry** (paper-first)
+- `scripts/pmm_doctor.py` + `tests/` — safety gates before merge/live
+- `scripts/btc5m_*` — upstream-compatible internals
 
 ## Deploy / Run
 
@@ -67,10 +69,11 @@ git remote add upstream https://github.com/Novals83/5min-btc-polymarket.git
 # dry-run — NO --execute
 .venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile desk
 # or
-scripts/btc5m_ctl.sh start --profile desk
-scripts/btc5m_ctl.sh status
-scripts/btc5m_ctl.sh report --limit 20
-scripts/btc5m_ctl.sh stop
+scripts/pmm_ctl.sh start --profile desk
+scripts/pmm_ctl.sh status
+scripts/pmm_doctor.py
+scripts/pmm_ctl.sh report --limit 20
+scripts/pmm_ctl.sh stop
 ```
 
 ### Live (opt-in only)
@@ -78,6 +81,8 @@ scripts/btc5m_ctl.sh stop
 Only after Ledger desk pre-flight + human confirmation:
 
 ```bash
+scripts/pmm_ctl.sh start --profile desk --live
+# or
 .venv/bin/python scripts/test_btc_5m_session_exit_sl.py --profile desk --execute
 ```
 
