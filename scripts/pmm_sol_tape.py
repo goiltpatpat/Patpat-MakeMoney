@@ -2,6 +2,7 @@
 """Solana Jupiter research tape CLI — Ledger JSON (quote-only; --live refused).
 
 Never signs or sends. Uses GET /swap/v2/order WITHOUT taker + optional Price V3.
+Optional RO desk balance probe via public RPC (pubkey only; never secrets).
 """
 from __future__ import annotations
 
@@ -16,6 +17,10 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from venues.solana.desk_balance import (  # noqa: E402
+    DeskBalanceError,
+    fetch_desk_balance,
+)
 from venues.solana.jupiter_quotes import (  # noqa: E402
     SOL_MINT,
     USDC_MINT,
@@ -70,7 +75,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     p = argparse.ArgumentParser(
         description=(
             "Solana Jupiter research tape (quote-only). "
-            "GET api.jup.ag/swap/v2/order WITHOUT taker. Never sign/send."
+            "GET api.jup.ag/swap/v2/order WITHOUT taker. Never sign/send. "
+            "Optional --balance-pubkey RO desk probe (public RPC; never secrets)."
         )
     )
     p.add_argument(
@@ -102,21 +108,52 @@ def main(argv: Optional[list[str]] = None) -> int:
         action="store_true",
         help="Also fetch Jupiter Price V3 USD for input mint",
     )
+    p.add_argument(
+        "--balance-pubkey",
+        nargs="?",
+        const="",
+        default=None,
+        help=(
+            "RO desk wallet balance probe (pubkey). "
+            "Omit value to use env PMM_SOL_DESK_PUBKEY. Never a seed path."
+        ),
+    )
+    p.add_argument(
+        "--balance-only",
+        action="store_true",
+        help="Skip Jupiter quote; only run --balance-pubkey / PMM_SOL_DESK_PUBKEY probe",
+    )
+    p.add_argument(
+        "--no-token-accounts",
+        action="store_true",
+        help="Balance probe: SOL lamports only (skip getTokenAccountsByOwner)",
+    )
+    p.add_argument(
+        "--rpc-url",
+        default=None,
+        help="Solana JSON-RPC URL (default PMM_SOL_RPC_URL or mainnet-beta public)",
+    )
     args = p.parse_args(argv)
 
     if args.live:
         print(json.dumps(_refuse_live(), indent=2, sort_keys=True))
         return 2
 
+    want_balance = args.balance_pubkey is not None or args.balance_only
+    if args.balance_only and args.balance_pubkey is None:
+        # balance-only implies env/default pubkey resolution
+        args.balance_pubkey = ""
+
     out: dict[str, Any] = {
         "ok": True,
         "mode": "research_dry_run",
         "live": False,
         "signed": False,
-        "execution": "quote_only",
+        "execution": "balance_readonly" if args.balance_only else "quote_only",
         "api": {
             "order": "GET https://api.jup.ag/swap/v2/order (no taker)",
             "price": "GET https://api.jup.ag/price/v3",
+            "rpc": "Solana JSON-RPC getBalance (+ optional getTokenAccountsByOwner)",
             "docs_order": "https://developers.jup.ag/docs/swap/order-and-execute",
             "docs_price": "https://developers.jup.ag/docs/price",
             "portal": "https://developers.jup.ag/portal",
@@ -124,7 +161,37 @@ def main(argv: Optional[list[str]] = None) -> int:
         },
         "errors": [],
         "allow_fixture": bool(args.allow_fixture),
+        "smoke_sol_note": "0.001 SOL = 1_000_000 lamports (smoke size; paper/RO)",
     }
+
+    if want_balance:
+        try:
+            pk_arg = args.balance_pubkey
+            # empty string / None → resolve from env inside fetch
+            explicit = None if pk_arg in (None, "") else pk_arg
+            bal = fetch_desk_balance(
+                explicit,
+                rpc_url=args.rpc_url,
+                include_token_accounts=not bool(args.no_token_accounts),
+                timeout=max(float(args.timeout), 15.0),
+            )
+            out["balance"] = bal.to_dict()
+            if not bal.ok:
+                out["ok"] = False
+                out["errors"].extend(bal.errors or [{"error": "balance_probe_failed"}])
+        except DeskBalanceError as e:
+            out["ok"] = False
+            out["errors"].append({"venue": "solana_rpc", "error": str(e)})
+            out["balance"] = {"ok": False, "error": str(e)}
+        except Exception as e:
+            out["ok"] = False
+            out["errors"].append(
+                {"venue": "solana_rpc", "error": f"{type(e).__name__}: {e}"}
+            )
+
+    if args.balance_only:
+        print(json.dumps(out, indent=2, sort_keys=True))
+        return 0 if out["ok"] else 1
 
     if args.fixture and not args.allow_fixture:
         out["ok"] = False

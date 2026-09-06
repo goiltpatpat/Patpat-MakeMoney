@@ -4,12 +4,23 @@
 
 TH desk primary fiat rails remain **BNTH + Bitkub**. Solana is a **research tape** lane via Jupiter — optional cross-check vs BNTH USDT-ish with **labeled** units only.
 
+## Thesis phase matrix (brief)
+
+| Phase / Thesis | Allowed on Solana lane |
+|----------------|------------------------|
+| **P0 / T0–T1** | RO Jupiter quotes + labeled fee/slip/priority fields; RO desk **pubkey** balance probe (public RPC). Fixture-kill defaults ON. `--live` hard-refuse. |
+| **P1** | Paper logs → `edge_log` / scorecard (no sign/send). |
+| **P2** | Optional live only after P0+P1 + explicit user OK + `PMM_SOL_LIVE_OK` (Phantom UI-sign or gated local signer). **Not wired in this slice.** |
+
+**Smoke size:** **0.001 SOL = 1_000_000 lamports** (paper/RO smoke). Not a live spend authorization.
+
 ## API chosen (public docs, verified)
 
 | Role | Endpoint | Notes |
 |------|----------|-------|
 | **Quote (SoT)** | `GET https://api.jup.ag/swap/v2/order` | **Omit `taker`** → quote only (`transaction=null`). Never call `/execute`. |
 | **Price (optional)** | `GET https://api.jup.ag/price/v3?ids={mints}` | USD heuristics price; up to 50 mints. |
+| **Balance (RO)** | Solana JSON-RPC `getBalance` (+ optional `getTokenAccountsByOwner`) | Pubkey only via `--balance-pubkey` / `PMM_SOL_DESK_PUBKEY`. Never reads seed files. |
 | Docs (order) | https://developers.jup.ag/docs/swap/order-and-execute | Without taker: quote but no transaction |
 | Docs (price) | https://developers.jup.ag/docs/price | Price API V3 |
 | Portal | https://developers.jup.ag/portal | Optional `x-api-key` (`JUPITER_API_KEY`); **keyless** allowed at low RPS (~0.5) |
@@ -29,10 +40,11 @@ CLI / client emit JSON with:
 - `in_amount` / `out_amount` — raw integer amounts from API
 - `price_impact_pct` — API field when present
 - `route_labels` / `router` — route plan labels
-- `slippage_bps` — API (labeled)
-- `fee_bps` — API total fee bps (labeled)
+- `slippage_bps` — API (labeled via `gross_vs_net.slippage_bps_label`)
+- `fee_bps` — API total fee bps (labeled via `gross_vs_net.fee_bps_label`)
 - `prioritization_fee_lamports` — API field when present; else `ESTIMATE_unavailable_*`
 - `gross_vs_net` — gross mid vs net after **API** `feeBps` only (no invented fee stack)
+- `balance` — optional RO desk probe (`lamports`, `sol`, optional `tokens`)
 
 Fail closed: HTTP/parse errors raise; **no silent fixture**. Fixture requires `--fixture --allow-fixture`.
 
@@ -40,9 +52,11 @@ Fail closed: HTTP/parse errors raise; **no silent fixture**. Fixture requires `-
 
 ```
 src/venues/solana/jupiter_quotes.py   # HTTP quote + price clients
+src/venues/solana/desk_balance.py     # RO pubkey balance via public RPC
 scripts/pmm_sol_tape.py               # CLI Ledger JSON; --live refuse (exit 2)
 src/venues/arb/sol_cex.py             # optional Jupiter vs BNTH stub (unit_mismatch / fixture-kill)
 docs/SOLANA.md                        # this file
+docs/SOLANA_CUSTODY.md                # desk pubkey + authority (secrets outside repo)
 ```
 
 ## CLI
@@ -51,6 +65,13 @@ docs/SOLANA.md                        # this file
 # Live network quote-only (keyless or JUPITER_API_KEY)
 python scripts/pmm_sol_tape.py
 python scripts/pmm_sol_tape.py --price-v3
+
+# RO desk balance (pubkey only; public RPC)
+python scripts/pmm_sol_tape.py --balance-only --balance-pubkey 7W3SPbRcGD1GJPpafEYhgduaMxLpmHBG9KGqytqZEhHf
+# or: export PMM_SOL_DESK_PUBKEY=... ; python scripts/pmm_sol_tape.py --balance-only --balance-pubkey
+
+# Quote + balance in one JSON
+python scripts/pmm_sol_tape.py --balance-pubkey 7W3SPbRcGD1GJPpafEYhgduaMxLpmHBG9KGqytqZEhHf
 
 # Offline fixture (tests only)
 python scripts/pmm_sol_tape.py --fixture --allow-fixture
@@ -63,6 +84,15 @@ python scripts/pmm_sol_tape.py --live   # exit 2
 
 - Never sign or send Solana transactions from this repo path.
 - Never invent mids / FX / priority fees.
+- Never read seed / private-key files for balance or quotes.
 - Money-path fixture → kill unless `--allow-fixture`.
 - TH fiat rails: Bitkub + BNTH remain primary; Solana is research tape only.
-- Solana live / custody: **not wired** (see `docs/HOLES.md`).
+- Solana live / custody: **not wired** (see `docs/HOLES.md`, `docs/SOLANA_CUSTODY.md`).
+
+## Custody / team authority
+
+See [docs/SOLANA_CUSTODY.md](SOLANA_CUSTODY.md) — team desk ops rights; seed stays human-held outside repo.
+
+## Expanded mandate (operator)
+
+Desk may **scout + design** Solana make-money lanes **beyond Jupiter-only** (aggregators, AMMs/DLMM, RFQ, LST/basis screens, CEX↔SOL premium — each with falsify/kill criteria). Paper/read-only first. No tipster. No ungated live. THB rails (Bitkub↔BNTH) remain fiat priority; Solana is a parallel on-chain build lane.

@@ -50,7 +50,8 @@ Module: `src/venues/oneinch_quotes.py`.
 | Raydium | Not wired (optional later) |
 
 Module: `src/venues/solana/jupiter_quotes.py`. CLI: `scripts/pmm_sol_tape.py` (`--live` hard-refuse).
-See `docs/SOLANA.md`.
+RO desk balance: `src/venues/solana/desk_balance.py` via `--balance-pubkey` / `PMM_SOL_DESK_PUBKEY` (public RPC; never secrets).
+See `docs/SOLANA.md`, `docs/SOLANA_CUSTODY.md`.
 
 ## Bitkub — public ticker (paper)
 
@@ -83,7 +84,7 @@ Secrets stay in `.env` / env; never commit real keys.
 | `pmm_bitkub_paper.py` | Paper RT | `--live` hard-refuse |
 | `pmm_arb_scan.py` | Paper SCAN | `--live` hard-refuse (exit 2) |
 | `pmm_basis_scan.py` | Paper same-ccy THB basis SCAN | `--live` hard-refuse (exit 2) |
-| `pmm_sol_tape.py` | Solana Jupiter quote-only | `--live` hard-refuse (exit 2) |
+| `pmm_sol_tape.py` | Solana Jupiter quote-only + optional RO balance | `--live` hard-refuse (exit 2); `--balance-pubkey` |
 | Fixture money briefs | **Killed** (`money_leg_source_fixture`) | Offline only with `--allow-fixture` |
 
 ## Travel Rule note (Feb 2027)
