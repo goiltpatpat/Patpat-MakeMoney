@@ -27,3 +27,12 @@ Tracked defects / hygiene gaps around tip **`26ed49f`** (Binance TH lane + DEX�
 - Any DEX/CEX/FX leg with `source=fixture` → `kill=true`, `kill_reason=money_leg_source_fixture`
 - Optional `--allow-fixture` (or `PMM_ARB_ALLOW_FIXTURE=1`) for **offline tests only**
 - Default **OFF** for money briefs
+
+## Solana lane residuals
+
+| ID | Note |
+|----|------|
+| R6 | **Solana live / custody not wired** — research quote tape only (`docs/SOLANA.md`); no sign/send, no `/execute`, no wallet keys |
+| R7 | Jupiter keyless low RPS; Portal `JUPITER_API_KEY` optional — rate limits may fail closed (no invented quotes) |
+| R8 | Raydium direct compute not wired (optional later) |
+| R9 | `sol_cex` BNTH compare requires labeled same-stable (USDC≈USDT) or labeled FX — else `unit_mismatch` |

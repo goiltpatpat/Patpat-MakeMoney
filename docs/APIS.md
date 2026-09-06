@@ -35,6 +35,23 @@ Use `--fixture --allow-fixture` for offline unit/dry tests only.
 
 Module: `src/venues/oneinch_quotes.py`.
 
+## Solana / Jupiter — research tape only
+
+| Item | Value |
+|------|-------|
+| Role | On-chain **research / dry-run** tape (not TH fiat primary) |
+| Quote SoT | `GET https://api.jup.ag/swap/v2/order` **WITHOUT `taker`** → quote only (`transaction=null`) |
+| Price (optional) | `GET https://api.jup.ag/price/v3?ids={mints}` |
+| Docs | https://developers.jup.ag/docs/swap/order-and-execute · https://developers.jup.ag/docs/price |
+| Auth | Optional `x-api-key` via `JUPITER_API_KEY` (Portal); **keyless** low RPS OK |
+| Swaps / custody | **Never** — no `/execute`, no sign/send, no private keys |
+| Fixture | Explicit `--fixture --allow-fixture` only; fail closed (no silent fixture) |
+| Fees | `feeBps` / `slippageBps` / `prioritizationFeeLamports` from API or labeled ESTIMATE unavailable |
+| Raydium | Not wired (optional later) |
+
+Module: `src/venues/solana/jupiter_quotes.py`. CLI: `scripts/pmm_sol_tape.py` (`--live` hard-refuse).
+See `docs/SOLANA.md`.
+
 ## Bitkub — public ticker (paper)
 
 | Item | Value |
@@ -48,6 +65,7 @@ Module: `src/venues/oneinch_quotes.py`.
 | Var | Purpose |
 |-----|---------|
 | `ONEINCH_API_KEY` | Optional 1inch Spot Price Bearer (read-only) |
+| `JUPITER_API_KEY` | Optional Jupiter Portal `x-api-key` (read-only quote/price; keyless OK) |
 | `PMM_BINANCE_TH_FIXTURE=1` | BNTH offline fixture ticker |
 | `PMM_ARB_ALLOW_FIXTURE=1` | Permit fixture mids in arb opportunity output (tests only; default OFF) |
 | `PMM_BASIS_ALLOW_FIXTURE=1` | Permit fixture mids in basis scan (tests only; default OFF) |
@@ -65,6 +83,7 @@ Secrets stay in `.env` / env; never commit real keys.
 | `pmm_bitkub_paper.py` | Paper RT | `--live` hard-refuse |
 | `pmm_arb_scan.py` | Paper SCAN | `--live` hard-refuse (exit 2) |
 | `pmm_basis_scan.py` | Paper same-ccy THB basis SCAN | `--live` hard-refuse (exit 2) |
+| `pmm_sol_tape.py` | Solana Jupiter quote-only | `--live` hard-refuse (exit 2) |
 | Fixture money briefs | **Killed** (`money_leg_source_fixture`) | Offline only with `--allow-fixture` |
 
 ## Travel Rule note (Feb 2027)
