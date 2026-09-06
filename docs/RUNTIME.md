@@ -7,7 +7,7 @@ Last aligned: 2026-09-06 (impulse/skew gates shipped; paper path dependencies cl
 - Skip if `sec_left < min_entry_seconds_left`
 - CLOB best ask UP/DOWN; candidates with ask ≥ `threshold`
 - Pick stronger ask side
-- On entry/exit, **always** subprocess the external pm-hl runner (`run_open` / `run_close`); `--execute` only appends the live flag — it does **not** skip the external call in dry mode
+- On entry/exit, **always** subprocess first-party `src/live/pm_live_trade_runner.py` via `run_open` / `run_close`; `--execute` only appends the live flag — dry mode still invokes the runner (no-fill without live)
 - Profile knobs: threshold, stake, stop-loss %, exit-before, timing/poll
 
 ## Optional hard gates (DEFAULT OFF — fail-closed when ON)

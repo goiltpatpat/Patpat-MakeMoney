@@ -8,7 +8,7 @@ description: Patpat-MakeMoney desk skill for BTC 5-minute Up/Down on Polymarket 
 Fork of upstream `btc-5m-live` for the **Patpat-MakeMoney** desk (Ledger Head · Pulse · Grid · Thesis).
 
 ## Paths
-- Main trading repo: `<your-workspace>/pm-hl-conservative-plus-repo` (or `BTC5M_REPO`)
+- Execution root: this repository (override with `BTC5M_REPO` only if needed)
 - Core runner: `src/live/pm_live_trade_runner.py`
 - Canonical skill runner: `scripts/test_btc_5m_session_exit_sl.py`
 - Skill control: `scripts/btc5m_ctl.sh`

@@ -6,7 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 WORKSPACE_ROOT="$(cd "$SKILL_ROOT/../.." && pwd)"
-REPO="${BTC5M_REPO:-$WORKSPACE_ROOT/pm-hl-conservative-plus-repo}"
+REPO="${BTC5M_REPO:-$SKILL_ROOT}"
 PY="$SCRIPT_DIR/run_btc_5m_threshold_test.py"  # compatibility wrapper -> canonical runner
 LOG="$REPO/runtime/btc_5m_threshold_watch.log"
 STATE="$REPO/runtime/btc_5m_threshold_watch.state"

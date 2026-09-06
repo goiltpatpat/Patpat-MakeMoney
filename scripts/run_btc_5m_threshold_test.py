@@ -18,7 +18,7 @@ def default_repo() -> str:
     env_repo = os.environ.get("BTC5M_REPO")
     if env_repo:
         return env_repo
-    return str(Path(__file__).resolve().parents[3] / "pm-hl-conservative-plus-repo")
+    return str(Path(__file__).resolve().parents[1])  # Patpat-MakeMoney repo root
 
 
 def canonical_script() -> str:

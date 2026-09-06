@@ -8,7 +8,7 @@ services:
     volumes:
       - ${WORKSPACE_DIR:-../..}:/workspace
     env_file:
-      - ${TRADING_ENV_FILE:-../../pm-hl-conservative-plus-repo/.env}
+      - ${TRADING_ENV_FILE:-.env}
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped

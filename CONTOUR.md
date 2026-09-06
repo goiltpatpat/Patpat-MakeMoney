@@ -19,8 +19,8 @@ Single source of truth for runners on the team fork.
 - Prefer profile **`desk`**; doctor: `scripts/pmm_doctor.py`
 
 ## External dependency boundary
-- Order engine: `<your-workspace>/pm-hl-conservative-plus-repo/src/live/pm_live_trade_runner.py`
-- Auth: `<your-workspace>/pm-hl-conservative-plus-repo/.env` (or `BTC5M_ENV_FILE`)
+- Order engine: `src/live/pm_live_trade_runner.py` (this repo)
+- Auth: `.env` at repo root (or `BTC5M_ENV_FILE`)
 
 ## Runtime artifacts
 - Skill-isolated runtime: `skills/btc-5m-live/runtime` (or `./runtime` via ctl)
