@@ -9,7 +9,7 @@ TH desk primary fiat rails remain **BNTH + Bitkub**. Solana is a **research tape
 | Phase / Thesis | Allowed on Solana lane |
 |----------------|------------------------|
 | **P0 / T0–T1** | RO Jupiter quotes + labeled fee/slip/priority fields; RO desk **pubkey** balance probe (public RPC). Fixture-kill defaults ON. `--live` hard-refuse. |
-| **P1** | Paper logs → `edge_log` / scorecard (no sign/send). |
+| **P1 / T2** | Jupiter quote → **paper fill stub** (`venue=solana_paper`) → `edge_log` + scorecard-readable rows. Net after **API feeBps** only (labeled). No invented PnL. No sign/send. |
 | **P2** | Optional live only after P0+P1 + explicit user OK + `PMM_SOL_LIVE_OK` (Phantom UI-sign or gated local signer). **Not wired in this slice.** |
 
 **Smoke size:** **0.001 SOL = 1_000_000 lamports** (paper/RO smoke). Not a live spend authorization.
@@ -53,13 +53,25 @@ Fail closed: HTTP/parse errors raise; **no silent fixture**. Fixture requires `-
 ```
 src/venues/solana/jupiter_quotes.py   # HTTP quote + price clients
 src/venues/solana/desk_balance.py     # RO pubkey balance via public RPC
+src/venues/solana/paper.py            # T2 paper fill stub (venue=solana_paper)
 scripts/pmm_sol_tape.py               # CLI Ledger JSON; --live refuse (exit 2)
+scripts/pmm_sol_paper.py              # T2 paper fill CLI → optional edge_log
 src/venues/arb/sol_cex.py             # optional Jupiter vs BNTH stub (unit_mismatch / fixture-kill)
 src/venues/basis/sol_thb.py           # SOL–THB same-ccy + Jupiter×FX basis SCAN
 scripts/pmm_sol_basis_scan.py         # SOL–THB basis CLI (--live refuse)
 docs/SOLANA.md                        # this file
 docs/SOLANA_CUSTODY.md                # desk pubkey + authority (secrets outside repo)
 ```
+
+## T2 paper fill → edge_log
+
+`scripts/pmm_sol_paper.py` turns a Jupiter quote into a **paper fill stub** (`venue=solana_paper`) and can append scorecard-readable rows to `runtime/edge_log.jsonl`.
+
+- Fee / net fields use **API `feeBps` only** when present (labeled `API_feeBps`); otherwise `unavailable` — never invent fee stacks or PnL.
+- `realized_pnl_thb` stays null on solana_paper rows (no invented THB PnL).
+- `--live` hard-refused (exit 2). Fixture requires `--fixture --allow-fixture`.
+- `--batch N` stamps N paper rows from one quote (offline proof path for ≥5 rows).
+- BNTH premium labeled row is **out of scope** for this slice (parallel B branch).
 
 ## CLI
 
@@ -80,6 +92,13 @@ python scripts/pmm_sol_tape.py --fixture --allow-fixture
 
 # Hard-refused
 python scripts/pmm_sol_tape.py --live   # exit 2
+
+# T2 paper fill (single) + edge_log
+python scripts/pmm_sol_paper.py --fixture --allow-fixture --log-edge
+python scripts/pmm_sol_paper.py --batch 5 --fixture --allow-fixture --log-edge
+
+# Hard-refused
+python scripts/pmm_sol_paper.py --live   # exit 2
 ```
 
 ## Hard rules
