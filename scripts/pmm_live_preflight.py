@@ -35,10 +35,16 @@ def main() -> int:
         bad("live runner/force-side missing")
 
     vpy = ROOT / ".venv" / "bin" / "python"
-    if vpy.exists():
-        ok(".venv/bin/python present")
+    vpy_win = ROOT / ".venv" / "Scripts" / "python.exe"
+    try:
+        present = vpy.exists() or vpy_win.exists()
+    except OSError:
+        # WSL-created venv on Windows can raise WinError 1920 for bin/python
+        present = vpy_win.exists() or (ROOT / ".venv").exists()
+    if present:
+        ok(".venv present (bin/ or Scripts/)")
     else:
-        bad("missing .venv/bin/python — create with requirements-exec.txt")
+        bad("missing .venv — create with requirements-exec.txt under WSL/Linux path used by ctl")
 
     env_path = Path(os.environ.get("BTC5M_ENV_FILE") or (ROOT / ".env"))
     if env_path.exists():
