@@ -433,11 +433,15 @@ def main() -> int:
     jup = ROOT / "src" / "venues" / "solana" / "jupiter_quotes.py"
     sol_cli = ROOT / "scripts" / "pmm_sol_tape.py"
     sol_cex = ROOT / "src" / "venues" / "arb" / "sol_cex.py"
+    desk_bal = ROOT / "src" / "venues" / "solana" / "desk_balance.py"
+    custody_md = ROOT / "docs" / "SOLANA_CUSTODY.md"
     for path_, label in (
         (solana_md, "docs/SOLANA.md"),
         (jup, "src/venues/solana/jupiter_quotes.py"),
+        (desk_bal, "src/venues/solana/desk_balance.py"),
         (sol_cli, "scripts/pmm_sol_tape.py"),
         (sol_cex, "src/venues/arb/sol_cex.py"),
+        (custody_md, "docs/SOLANA_CUSTODY.md"),
     ):
         if path_.exists():
             ok(f"{label} present")
@@ -516,6 +520,17 @@ def main() -> int:
             ok("pmm_sol_tape has allow-fixture + gross_vs_net")
         else:
             bad("pmm_sol_tape missing allow-fixture / gross_vs_net")
+        if "--balance-pubkey" in st and "PMM_SOL_DESK_PUBKEY" in st:
+            ok("pmm_sol_tape exposes RO --balance-pubkey / PMM_SOL_DESK_PUBKEY")
+        else:
+            bad("pmm_sol_tape missing balance pubkey probe wiring")
+
+    if desk_bal.exists():
+        dbt = desk_bal.read_text(encoding="utf-8")
+        if "getBalance" in dbt and "never" in dbt.lower() and "seed" in dbt.lower():
+            ok("desk_balance is pubkey+RPC RO (no seed reads)")
+        else:
+            bad("desk_balance missing RO pubkey posture")
 
     if sol_cex.exists():
         sct = sol_cex.read_text(encoding="utf-8")
@@ -530,6 +545,17 @@ def main() -> int:
             ok("docs/SOLANA.md documents quote-only + no custody")
         else:
             bad("docs/SOLANA.md incomplete")
+        if "0.001 SOL" in sm and ("Thesis" in sm or "phase" in sm.lower()):
+            ok("docs/SOLANA.md notes 0.001 SOL smoke + Thesis phase")
+        else:
+            bad("docs/SOLANA.md missing 0.001 SOL smoke / Thesis phase note")
+
+    if custody_md.exists():
+        cm = custody_md.read_text(encoding="utf-8")
+        if "7W3SPbRcGD1GJPpafEYhgduaMxLpmHBG9KGqytqZEhHf" in cm and "0.001 SOL" in cm:
+            ok("docs/SOLANA_CUSTODY.md has desk pubkey + 0.001 SOL smoke")
+        else:
+            bad("docs/SOLANA_CUSTODY.md incomplete")
 
     if holes_md.exists():
         ht = holes_md.read_text(encoding="utf-8")
