@@ -496,7 +496,7 @@ def main():
                 dn_ask,
                 enabled=bool(args.skew_enabled),
                 impulse_dir=impulse.impulse_dir if bool(args.impulse_enabled) else None,
-                require_align=bool(args.require_skew_align) and bool(args.impulse_enabled),
+                require_align=bool(args.require_skew_align) and bool(args.impulse_enabled),  # strict triple needs both gates
             )
             if not skew.ok:
                 report['attempts'].append({

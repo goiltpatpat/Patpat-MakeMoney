@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 import requests
 
-# Bucket-open BTC prints cached per market slug
+# Bucket-open BTC prints cached per market slug (true open at bucket open_ts)
 _OPEN_PX: dict[str, float] = {}
 
 
@@ -32,16 +32,15 @@ class SkewResult:
     detail: dict[str, Any] | None = None
 
 
-def fetch_binance_btcusdt(timeout: float = 5.0) -> tuple[float, float]:
-    """Return (price, fetched_at_epoch). Fail raises."""
+def fetch_binance_btcusdt(timeout: float = 5.0) -> float:
+    """Return last BTCUSDT price. Fail raises."""
     r = requests.get(
         "https://api.binance.com/api/v3/ticker/price",
         params={"symbol": "BTCUSDT"},
         timeout=timeout,
     )
     r.raise_for_status()
-    px = float(r.json()["price"])
-    return px, time.time()
+    return float(r.json()["price"])
 
 
 def bucket_open_ts_from_slug(slug: str) -> Optional[int]:
@@ -52,13 +51,37 @@ def bucket_open_ts_from_slug(slug: str) -> Optional[int]:
         return None
 
 
-def ensure_btc_open(slug: str, stale_sec: float = 8.0) -> float:
-    """Return BTC open print for this slug; fetch/cache fail-closed via raise."""
+def fetch_binance_btc_open_at(open_ts: int, timeout: float = 5.0) -> float:
+    """BTCUSDT open print for the 1m candle at/after bucket open_ts (ms). Fail raises."""
+    r = requests.get(
+        "https://api.binance.com/api/v3/klines",
+        params={
+            "symbol": "BTCUSDT",
+            "interval": "1m",
+            "startTime": int(open_ts) * 1000,
+            "limit": 1,
+        },
+        timeout=timeout,
+    )
+    r.raise_for_status()
+    arr = r.json()
+    if not arr:
+        raise RuntimeError("binance_kline_empty")
+    # [open_time, open, high, low, close, ...]
+    return float(arr[0][1])
+
+
+def ensure_btc_open(slug: str) -> float:
+    """Return BTC open at bucket open_ts for this slug. Fail-closed via raise."""
     if slug in _OPEN_PX:
         return _OPEN_PX[slug]
-    px, ts = fetch_binance_btcusdt()
-    if time.time() - ts > stale_sec:
-        raise RuntimeError("btc_print_stale_on_fetch")
+    open_ts = bucket_open_ts_from_slug(slug)
+    if open_ts is None:
+        raise RuntimeError("bucket_open_ts_unparsed")
+    # If bucket has not started yet, cannot establish open
+    if time.time() < open_ts:
+        raise RuntimeError("bucket_not_started")
+    px = fetch_binance_btc_open_at(open_ts)
     _OPEN_PX[slug] = px
     return px
 
@@ -69,20 +92,26 @@ def evaluate_impulse(
     enabled: bool,
     btc_move_usd_min: float,
     btc_move_usd_max_reference: float = 100.0,
-    stale_sec: float = 8.0,
 ) -> ImpulseResult:
     if not enabled:
         return ImpulseResult(ok=True, status="impulse_gate_disabled")
 
     try:
-        btc_open = ensure_btc_open(slug, stale_sec=stale_sec)
-        btc_now, fetched_at = fetch_binance_btcusdt()
-        if time.time() - fetched_at > stale_sec:
-            return ImpulseResult(ok=False, status="skip_impulse_feed_unavailable", detail={"reason": "stale"})
+        btc_open = ensure_btc_open(slug)
+    except Exception as e:
+        return ImpulseResult(
+            ok=False,
+            status="skip_impulse_open_unavailable",
+            detail={"error": str(e)},
+        )
+
+    try:
+        btc_now = fetch_binance_btcusdt()
     except Exception as e:
         return ImpulseResult(
             ok=False,
             status="skip_impulse_feed_unavailable",
+            btc_open=btc_open,
             detail={"error": str(e)},
         )
 
@@ -96,6 +125,7 @@ def evaluate_impulse(
         direction = "DOWN"
 
     flag_max = abs_move > float(btc_move_usd_max_reference)
+    open_ts = bucket_open_ts_from_slug(slug)
 
     if direction == "FLAT":
         return ImpulseResult(
@@ -106,6 +136,7 @@ def evaluate_impulse(
             btc_move_usd=move,
             impulse_dir=direction,
             flag_above_max_ref=flag_max,
+            detail={"open_ts": open_ts},
         )
 
     if abs_move < float(btc_move_usd_min):
@@ -117,7 +148,7 @@ def evaluate_impulse(
             btc_move_usd=move,
             impulse_dir=direction,
             flag_above_max_ref=flag_max,
-            detail={"btc_move_usd_min": btc_move_usd_min},
+            detail={"btc_move_usd_min": btc_move_usd_min, "open_ts": open_ts},
         )
 
     return ImpulseResult(
@@ -128,6 +159,7 @@ def evaluate_impulse(
         btc_move_usd=move,
         impulse_dir=direction,
         flag_above_max_ref=flag_max,
+        detail={"open_ts": open_ts},
     )
 
 

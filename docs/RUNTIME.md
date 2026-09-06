@@ -13,7 +13,8 @@ Last aligned: 2026-09-06 (impulse/skew gates shipped behind flags).
 Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 
 **Impulse (Binance BTCUSDT):**
-- `btc_move_usd = btc_now - btc_open` for current slug bucket
+- `btc_open` = Binance 1m **open** at bucket `open_ts` parsed from slug (not first mid-slot poll)
+- `btc_move_usd = btc_now - btc_open`
 - Pass if `abs(move) >= btc_move_usd_min` and direction not FLAT
 - desk min default **80**; conservative/aggressive **70**
 - `btc_move_usd_max_reference` (100) = soft flag only
@@ -31,3 +32,5 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 ## External / unverified
 - Sibling `pm-hl-conservative-plus-repo` live readiness
 - End-to-end paper A/B of gate ON vs OFF in a live 5m window
+
+**Note:** `--skew-gate` alone does not require impulse alignment; use `--enable-gates` for strict `impulse_dir == skew_side == entry_side`.
