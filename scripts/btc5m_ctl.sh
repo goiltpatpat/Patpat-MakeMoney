@@ -98,11 +98,16 @@ cmd_start() {
 
   (
     export PYTHONUNBUFFERED=1
-    if [[ -f "$ENV_FILE" ]]; then
-      set -a
-      # shellcheck disable=SC1090
-      source "$ENV_FILE"
-      set +a
+    # Paper isolation: load live secrets only in live mode.
+    if [[ "$live" -eq 1 ]]; then
+      if [[ -f "$ENV_FILE" ]]; then
+        set -a
+        # shellcheck disable=SC1090
+        source "$ENV_FILE"
+        set +a
+      fi
+    else
+      echo "paper isolation: not sourcing env file (live secrets stay out of paper process)"
     fi
     cd "$REPO"
     nohup "${runner_cmd[@]}" >"$log" 2>&1 &
@@ -156,6 +161,7 @@ cmd_status() {
 }
 
 cmd_stop() {
+  echo "NOTE: stop kills the process only — it does not cancel resting orders/positions on Polymarket."
   if ! is_running; then
     echo "already_stopped"
     return 0

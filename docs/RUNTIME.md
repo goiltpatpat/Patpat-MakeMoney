@@ -29,6 +29,7 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 ## Live isolation
 - `--execute` / ctl `--live` require `PMM_LIVE_OK=1`
 - ctl live also requires `.env` present
+- ctl **paper** does **not** source `.env` (live secrets stay out of paper processes)
 - Authenticated cancel only when `execute=True`
 - Open path forces desk-tight `PM_MAX_SPREAD=0.03` and `PM_MIN_TOP_ASK_NOTIONAL_USD=30`
 - Live day caps via profile `max_trades_per_day` + `daily_max_loss_usdc` (`runtime/desk_day_*.json`)
