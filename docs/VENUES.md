@@ -28,11 +28,15 @@ src/venues/
   oneinch_quotes.py    # read-only spot price (+ fixture)
   bitkub/
     paper.py           # ticker + paper fill + open/close RT; live stub raises
-scripts/pmm_tape.py           # multi-venue tape JSON brief
+scripts/pmm_tape.py           # multi-venue tape JSON brief (+ --divergence)
 scripts/pmm_bitkub_paper.py   # paper RT CLI (--symbol, --stake-thb); refuses --live
-scripts/pmm_edge_log.py       # append paper fills → runtime/edge_log.jsonl
+scripts/pmm_edge_log.py       # append paper fills -> runtime/edge_log.jsonl
+scripts/pmm_edge_scorecard.py # Thesis expectancy / hit-rate from edge_log (no invented PnL)
+scripts/pmm_paper_reconcile.py# post-stop reconcile_<ts>.json; gates session_closed
+src/venues/divergence.py      # same-currency divergence; cross = unit_mismatch
 runtime/bitkub_paper_day_caps.json   # max trades / loss stop (auto-created)
 runtime/edge_log.jsonl               # Thesis cage input (paper fills only)
+runtime/reconcile_<ts>.json          # post-stop paper checklist artifact
 ```
 
 ## CLIs (paper)
@@ -48,15 +52,20 @@ python scripts/pmm_bitkub_paper.py --symbol BTC_THB --stake-thb 100
 # Log paper fills for expectancy falsify (no invented PnL)
 python scripts/pmm_bitkub_paper.py --stake-thb 50 --no-record > /tmp/rt.json
 python scripts/pmm_edge_log.py --from-json /tmp/rt.json
+
+# Thesis scorecard + triple-tape divergence + post-stop reconcile
+python scripts/pmm_edge_scorecard.py
+python scripts/pmm_tape.py --all --divergence
+python scripts/pmm_paper_reconcile.py
 ```
 
 Live Bitkub: `PMM_BITKUB_LIVE_OK=1` is documented only; `pmm_bitkub_paper.py --live` and `live_order_stub()` **hard-refuse**.
 
-## Next PR hooks (do not expand this slice)
+## Thesis cage (this slice)
 
-1. **Edge scorecard CLI** — read `runtime/edge_log.jsonl`, emit expectancy / hit-rate falsify brief for Thesis cage.
-2. **Triple-tape divergence** — extend `pmm_tape.py` to flag BTC / 1inch / Bitkub divergence when all three present.
-3. **Post-stop paper reconcile** — artifact after day-cap stop summarizing paper fills vs caps (no live).
+1. **Edge scorecard** — `scripts/pmm_edge_scorecard.py` reads `runtime/edge_log.jsonl` only; N fills / round-trips / mean `realized_pnl_thb` from logged fields; fill-rate only if skip data present; day-cap stop flags from `bitkub_paper_day_state.json`. **No invented PnL.**
+2. **Triple-tape divergence** — `scripts/pmm_tape.py --divergence` (+ optional `--usdthb`) via `src/venues/divergence.py`. Each mid reported separately; numeric ratio/abs for same-currency pairs only; cross-currency = `unit_mismatch` unless labeled public USDTTHB supplied (never invent FX).
+3. **Post-stop paper reconcile** — `scripts/pmm_paper_reconcile.py` writes `runtime/reconcile_<ts>.json` checklist (day_state, edge_log tails, flat open positions, future-live manual steps). **`session_closed:true` blocked unless artifact written.**
 
 ## Hard rules
 
@@ -71,5 +80,8 @@ Live Bitkub: `PMM_BITKUB_LIVE_OK=1` is documented only; `pmm_bitkub_paper.py --l
 python scripts/pmm_doctor.py
 python -m unittest discover -s tests -v
 python scripts/pmm_tape.py --btc
+python scripts/pmm_tape.py --all --divergence
 python scripts/pmm_bitkub_paper.py --stake-thb 50 --no-record
+python scripts/pmm_edge_scorecard.py
+python scripts/pmm_paper_reconcile.py --preview
 ```

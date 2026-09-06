@@ -45,7 +45,8 @@ Impulse and skew gates are implemented but default off; enable through direct ru
 - Bitkub = SEC-licensed TH **execution candidate**; paper open+close RT (scripts/pmm_bitkub_paper.py) + day caps; live hard-refused
 - Paper fills -> scripts/pmm_edge_log.py -> runtime/edge_log.jsonl (Thesis falsify; no invented PnL)
 - Polymarket stays available but demoted; no tips
-- See docs/VENUES.md (next-PR hooks: edge scorecard, triple-tape divergence, post-stop reconcile)
+- Thesis cage: pmm_edge_scorecard.py + pmm_tape.py --divergence + pmm_paper_reconcile.py (paper-only; session_closed gated)
+- See docs/VENUES.md
 
 ## Hard rules
 - No personalized financial advice
