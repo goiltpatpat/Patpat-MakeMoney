@@ -1,12 +1,13 @@
-# Runtime truth — Patpat-MakeMoney
+﻿# Runtime truth — Patpat-MakeMoney
 
-Last aligned: 2026-09-06 (impulse/skew gates shipped behind flags).
+Last aligned: 2026-09-06 (impulse/skew gates shipped; paper path dependencies clarified).
 
 ## Enforced by `scripts/test_btc_5m_session_exit_sl.py` (always)
 - Resolve active BTC 5m market (`btc-updown-5m-<bucket>`)
 - Skip if `sec_left < min_entry_seconds_left`
 - CLOB best ask UP/DOWN; candidates with ask ≥ `threshold`
-- Pick stronger ask side; open via external runner only if `--execute`
+- Pick stronger ask side
+- On entry/exit, **always** subprocess the external pm-hl runner (`run_open` / `run_close`); `--execute` only appends the live flag — it does **not** skip the external call in dry mode
 - Profile knobs: threshold, stake, stop-loss %, exit-before, timing/poll
 
 ## Optional hard gates (DEFAULT OFF — fail-closed when ON)
@@ -27,7 +28,14 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 
 ## Paper-first control paths
 - `scripts/pmm_ctl.sh` / `btc5m_ctl.sh start` → dry unless `--live|--execute`
-- Prove: `python scripts/pmm_doctor.py` and `python3 -m unittest discover -s tests -v`
+- Prove (offline): `python scripts/pmm_doctor.py` and `python3 -m unittest discover -s tests -v`
+- Offline doctor/unit PASS ≠ end-to-end paper session readiness
+
+## Paper session prerequisites (FACT — not self-contained in this repo alone)
+1. External stack at `BTC5M_REPO` (default sibling `pm-hl-conservative-plus-repo`) with `.venv` and `src/live/pm_live_trade_runner.py`
+2. `py_clob_client` (and other skill runner deps) in the Python used by the skill runner / ctl
+3. Reachability: Polymarket Gamma + CLOB (Binance required only if impulse gate enabled)
+4. Confirm pm-hl dry mode (no `--execute`) returns parseable JSON without live keys — **unverified** until the stack is present
 
 ## Known local limitations
 - Runner profiles are hardcoded; YAML daily-loss, maximum-trades, and hedge settings are not consumed.
@@ -37,7 +45,7 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 - The force-close path creates an authenticated client and can cancel token orders without a local `args.execute` check. Reposting does not require cancellation success. External response contracts and these paths require a separate safety review before relying on paper/live isolation.
 
 ## External / unverified
-- Sibling `pm-hl-conservative-plus-repo` live readiness
+- Sibling `pm-hl-conservative-plus-repo` presence and dry-mode contract
 - End-to-end paper A/B of gate ON vs OFF in a live 5m window
 
 **Note:** `--skew-gate` alone does not require impulse alignment; use `--enable-gates` for strict `impulse_dir == skew_side == entry_side`.
