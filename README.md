@@ -24,16 +24,19 @@ See [`DESK.md`](DESK.md) for the paste-ready session brief format and kill-switc
 
 ## Strategy (Momentum into Close)
 
-Upstream-aligned short-horizon momentum:
+**What the runner enforces today (FACT):**
+1. Trade BTC 5m Up/Down near expiry on Polymarket.
+2. Skip if seconds left &lt; `min_entry_seconds_left` (default 60; desk prefers ~120s window in docs).
+3. Read CLOB best asks for UP/DOWN; if ask ≥ profile `threshold`, take the **stronger** side.
+4. Optional stop-loss / exit-before timing; live only with `--execute` / `--live` after desk gate.
+5. Sizing from profile caps (default profile: **`desk`**).
 
-1. Trade BTC 5m event markets near expiry.
-2. Main entry window: around **2 minutes left**.
-3. Confirm BTC has already moved about **$70–$100** in the active interval.
-4. Check market skew; if flow supports the move, enter **with** momentum.
-5. Sizing from profile caps (desk default: **`desk`** profile — tighter than retail aggressive).
-6. Optional micro-hedge when skew is extreme (e.g. 95/5).
+**Doctrine / planned (NOT hard-gated in `test_btc_5m_session_exit_sl.py` yet):**
+- BTC impulse ~$70–$100 in the active interval
+- Skew support (enter with momentum, not against flow)
+- Extreme-skew micro-hedge (~95/5)
 
-This is momentum-following, not mean-reversion.
+See `docs/RUNTIME.md`. Gates are next after docs alignment.
 
 ## Repository structure
 
@@ -90,9 +93,9 @@ scripts/pmm_ctl.sh start --profile desk --live
 
 1. Market validity — BTC 5m active, not unexpectedly closing
 2. Time-to-close — prefer ~120s left
-3. Impulse — meaningful BTC move (~$70–$100 ref)
-4. Skew — supports direction (do not fade strong momentum by default)
-5. Liquidity / spread — pass profile guards
+3. Impulse / skew — **desk checklist** (doctrine); not yet enforced by runner code
+4. Threshold / stronger-side — **enforced** by runner
+5. Liquidity / spread — yaml guards; runner delegates some to external stack (verify)
 6. Sizing — stake, max notional, daily loss
 7. Stop / exit — stop-loss + `exit_before_sec`
 8. Mode — dry-run first; `--execute` only after validation

@@ -122,6 +122,8 @@ runner_mapping:
   example_aggressive_now: ".venv/bin/python scripts/test_btc_5m_session_exit_sl.py --threshold 0.70 --stake-usd 6 --stop-loss-pct 0.30 --exit-before-sec 20 --min-entry-seconds-left 60 --entry-timeout-min 60 --poll-sec 5 --execute"
 
 notes:
-  - "Current 5m runner uses threshold/side-strength logic; impulse filter integration can be extended at strategy layer."
-  - "Entry behavior: continuous CLOB ask monitoring; if UP/DOWN >= threshold, enter on stronger side."
+  - "FACT: runner enforces threshold/side-strength + time floor only."
+  - "FACT: strategy_reference impulse ($70-100) and skew notes are NOT hard gates in test_btc_5m_session_exit_sl.py yet."
+  - "Entry behavior today: continuous CLOB ask monitoring; if UP/DOWN >= threshold, enter on stronger side."
+  - "Planned: hard-gate impulse + skew (Patpat-MakeMoney desk) after docs alignment."
   - "Patpat-MakeMoney default desk profile: prefer --profile desk; dry-run unless --execute after Ledger gate."

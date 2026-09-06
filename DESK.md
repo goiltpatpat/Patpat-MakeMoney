@@ -35,6 +35,10 @@ Confidence: high | medium | low
 Kill switch: btc5m_ctl.sh stop
 ```
 
+## Reality check (runner)
+Enforced today: market slot + time floor + CLOB ask threshold + stronger-side + paper-first ctl/hot/watch.
+Not enforced yet: impulse USD move, skew support (see Grid FACT). Treat those as checklist / Thesis inputs until gates land.
+
 ## Hard rules
 - No personalized financial advice
 - No promised returns

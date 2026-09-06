@@ -34,3 +34,6 @@ Single source of truth for runners on the team fork.
 ## Upstream
 - Parent: https://github.com/Novals83/5min-btc-polymarket
 - Sync: `git fetch upstream && git merge upstream/main`
+
+## Runtime truth
+- See `docs/RUNTIME.md` for enforced vs doctrine filters.

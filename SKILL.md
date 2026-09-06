@@ -1,6 +1,6 @@
 ---
 name: btc-5m-patpat-makemoney
-description: Patpat-MakeMoney desk skill for BTC 5-minute Up/Down on Polymarket — momentum-near-close (time-left, BTC move, skew), paper-first dry-run by default, controlled sizing, optional micro-hedge. Live --execute only after Ledger desk gate.
+description: Patpat-MakeMoney desk skill for BTC 5-minute Up/Down on Polymarket — paper-first; runner enforces time floor + CLOB ask threshold + stronger-side. Impulse/skew are desk doctrine (gates planned). Live --execute only after Ledger desk gate.
 ---
 
 # BTC 5m · Patpat-MakeMoney
@@ -16,12 +16,9 @@ Fork of upstream `btc-5m-live` for the **Patpat-MakeMoney** desk (Ledger Head ·
 - Desk doctrine: `DESK.md`
 
 ## Strategy alignment
-Use when the desk wants BTC 5m momentum near close:
-- Entry focus ~2 minutes left
-- Confirm meaningful BTC impulse (~$70–$100)
-- Prefer skew-supported direction
-- Enter with momentum, not against it
-- Optional small opposite hedge on extreme skew
+**Enforced by runner:** entry near close (time floor), CLOB ask ≥ threshold, stronger-side pick, profile sizing/SL timing, paper unless `--execute`.
+
+**Desk doctrine (not hard-gated yet):** BTC impulse ~$70–$100, skew support, extreme-skew micro-hedge. Do not claim these as live filters until gates ship.
 
 ## Operational rules (desk)
 - **Default is dry-run** unless `--execute` is set
