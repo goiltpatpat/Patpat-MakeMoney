@@ -31,11 +31,26 @@ Scanner only — **no live orders, no auto-transfer arb execution.**
 5. **Paper stub (optional):** simulate fills on both legs **without** sending orders; edge_log venue tags `dex_paper` / `binance_th_paper`.
 6. **Falsify first:** paper scan must survive fee + latency + Travel Rule buffers before any future live discussion.
 
+
+## Bitkub <-> BNTH same-currency THB basis (paper / read-only SCAN)
+
+Same quote currency **THB only** — **no FX path**. Compare Bitkub `BTC_THB` vs Binance TH `BTCTHB` (`api.binance.th` only).
+
+1. **Sign convention:** `basis_bps = (bnth_mid - bitkub_mid) / mid * 1e4` with `mid = (bnth+bitkub)/2`. Positive = BNTH richer than Bitkub.
+2. **Gross vs net:** Ledger JSON shows `gross_basis_bps`, labeled taker fee haircuts (`bitkub_taker_bps` + `bnth_taker_bps` -> `fee_floor_bps`), and `net_basis_bps = |gross| - fee_floor`.
+3. **Kill:** `unit_mismatch`, money-leg `source=fixture` (unless `--allow-fixture`), `stale` (age > max), fetch failure. Soft flags: `stale` / `out_of_sync`.
+4. **Duration filter (optional):** opportunity only if `|net_bps| >= threshold` for N consecutive samples (`--poll` + `--persist-sec` / `--min-persist-samples`).
+5. **`--live` hard-refuse.** No orders. No tipster.
+6. **OSS inspiration (shape only — no vendoring):** barbotine-shaped same-ccy screen; unicorn-style sync/persist as a **flag only**.
+
+CLI: `scripts/pmm_basis_scan.py` -> optional JSONL `runtime/basis_ledger.jsonl`.
+
 ## Sequence (locked)
 
 1. **Data layer first** — public BTC tape + 1inch read-only quotes (`src/venues/`, `scripts/pmm_tape.py`).
 2. **Bitkub paper round-trip** — public ticker → open+close fill JSON + day caps (`src/venues/bitkub/paper.py`, `scripts/pmm_bitkub_paper.py`). Edge log for Thesis falsify (`scripts/pmm_edge_log.py`).
 3. **Binance TH lane + DEX→CEX arb SCAN** — `api.binance.th` ticker + `scripts/pmm_arb_scan.py` (paper only; `--live` hard-refuse). BNTH is **second** TH lane — does not replace Bitkub until pass.
+3b. **Bitkub↔BNTH same-ccy THB basis** — `scripts/pmm_basis_scan.py` (THB only; kill FX/fixture/stale; `--live` hard-refuse).
 4. Full Bitkub adapter / session runner **after** ≥10 paired data-layer probes.
 5. Polymarket remains available but demoted; live PM still gated by existing `PMM_LIVE_OK` / `--live` paths and is not the multi-venue default.
 
@@ -54,9 +69,12 @@ src/venues/
     paper.py           # thin paper fills (binance_th_paper); live refuse
   arb/
     dex_cex.py         # DEX→CEX opportunity detector (gross vs net + kill rules)
+  basis/
+    bitkub_bnth.py     # Bitkub↔BNTH same-ccy THB basis (gross vs net + duration filter)
 scripts/pmm_tape.py           # multi-venue tape JSON brief (+ --divergence)
 scripts/pmm_bitkub_paper.py   # paper RT CLI; refuses --live
 scripts/pmm_arb_scan.py       # DEX→CEX arb SCAN CLI (--paper only; --live hard-refuse)
+scripts/pmm_basis_scan.py     # Bitkub↔BNTH THB basis SCAN CLI (--live hard-refuse)
 scripts/pmm_edge_log.py       # append paper fills -> runtime/edge_log.jsonl
 scripts/pmm_edge_scorecard.py # Thesis expectancy / hit-rate from edge_log
 scripts/pmm_paper_reconcile.py# post-stop reconcile_<ts>.json
@@ -92,6 +110,12 @@ python scripts/pmm_bitkub_paper.py --symbol BTC_THB --stake-thb 100
 # DEX→CEX arb SCAN (Binance TH CEX leg; labeled FX for USD vs THB)
 python scripts/pmm_arb_scan.py --paper --cex binance_th --usdthb 36.0 --usdthb-source desk_labeled
 python scripts/pmm_arb_scan.py --paper --fixture --allow-fixture --usdthb 36.0 --simulate-paper-fills
+# --live is hard-refused (exit 2)
+
+# Bitkub↔BNTH same-ccy THB basis SCAN (no FX; api.binance.th only)
+python scripts/pmm_basis_scan.py --paper
+python scripts/pmm_basis_scan.py --paper --prices-only
+python scripts/pmm_basis_scan.py --paper --poll 2 --persist-sec 6 --min-net-bps 5
 # --live is hard-refused (exit 2)
 
 # Log paper fills for expectancy falsify (no invented PnL)
@@ -131,6 +155,7 @@ python scripts/pmm_tape.py --btc
 python scripts/pmm_tape.py --all --divergence
 python scripts/pmm_bitkub_paper.py --stake-thb 50 --no-record
 python scripts/pmm_arb_scan.py --paper --fixture --allow-fixture --usdthb 36.0 --usdthb-source prove
+python scripts/pmm_basis_scan.py --paper --prices-only
 python scripts/pmm_edge_scorecard.py
 python scripts/pmm_paper_reconcile.py --preview
 ```
