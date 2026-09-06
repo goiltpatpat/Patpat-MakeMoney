@@ -11,6 +11,7 @@ API inventory: **`docs/APIS.md`**. Experimental holes: **`docs/HOLES.md`**.
 | **Bitkub** | **Primary execution candidate** (later) | SEC-licensed TH exchange. **Paper round-trip** via public ticker + simulated fills. Live orders **not** implemented; future live requires `PMM_BITKUB_LIVE_OK=1` + API creds (hard-refused today). |
 | **Binance TH (BNTH)** | **Second TH lane** (does **not** replace Bitkub until Thesis pass) | Thai-licensed **Gulf Binance / binance.th**. Public REST base **`https://api.binance.th`** only (docs: https://www.binance.th/api-docs/en/). **Never** wire `api.binance.com` and label it Binance TH. Paper/read-only ticker + thin paper fills (`binance_th_paper`). Live hard-refused. |
 | **1inch** | Research / read-only quotes (DEX mid for arb scan) | Spot price HTTP for cross-checks. **No swaps / no execution.** Optional `ONEINCH_API_KEY`; fixture mode without key. |
+| **Solana / Jupiter** | Research / dry-run on-chain tape | `GET api.jup.ag/swap/v2/order` without taker + optional Price V3. **Never sign/send.** Optional `JUPITER_API_KEY` (keyless OK). See `docs/SOLANA.md`. TH fiat rails stay Bitkub+BNTH. |
 | **Public BTC tape** | Data layer (primary now) | Binance **global** public `BTCUSDT` last/mark via HTTPS for tape briefs only — **not** the Binance TH venue. |
 | **Polymarket** | **Optional / non-primary** | Still in-repo for historical BTC 5m skill path. **TH geo: PM often blocked / impractical.** Do not treat as default execution venue. No tip flow. |
 | **Kraken / eToro** | Deferred | Out of scope until data-layer paired probes and Bitkub paper mature. |
@@ -67,14 +68,19 @@ src/venues/
   binance_th/
     tape.py            # api.binance.th ticker/price + bookTicker; fixture mode
     paper.py           # thin paper fills (binance_th_paper); live refuse
+  solana/
+    jupiter_quotes.py # Jupiter swap/v2/order quote-only + price/v3
   arb/
     dex_cex.py         # DEX→CEX opportunity detector (gross vs net + kill rules)
+    sol_cex.py         # optional Jupiter vs BNTH stub (labeled units / fixture-kill)
   basis/
     bitkub_bnth.py     # Bitkub↔BNTH same-ccy THB basis (gross vs net + duration filter)
 scripts/pmm_tape.py           # multi-venue tape JSON brief (+ --divergence)
 scripts/pmm_bitkub_paper.py   # paper RT CLI; refuses --live
 scripts/pmm_arb_scan.py       # DEX→CEX arb SCAN CLI (--paper only; --live hard-refuse)
 scripts/pmm_basis_scan.py     # Bitkub↔BNTH THB basis SCAN CLI (--live hard-refuse)
+scripts/pmm_sol_tape.py       # Solana Jupiter quote tape (--live hard-refuse)
+docs/SOLANA.md                # Solana research lane docs
 scripts/pmm_edge_log.py       # append paper fills -> runtime/edge_log.jsonl
 scripts/pmm_edge_scorecard.py # Thesis expectancy / hit-rate from edge_log
 scripts/pmm_paper_reconcile.py# post-stop reconcile_<ts>.json
@@ -118,6 +124,11 @@ python scripts/pmm_basis_scan.py --paper --prices-only
 python scripts/pmm_basis_scan.py --paper --poll 2 --persist-sec 6 --min-net-bps 5
 # --live is hard-refused (exit 2)
 
+# Solana Jupiter research tape (quote-only; no taker / no sign)
+python scripts/pmm_sol_tape.py
+python scripts/pmm_sol_tape.py --price-v3
+python scripts/pmm_sol_tape.py --fixture --allow-fixture
+
 # Log paper fills for expectancy falsify (no invented PnL)
 python scripts/pmm_bitkub_paper.py --stake-thb 50 --no-record > /tmp/rt.json
 python scripts/pmm_edge_log.py --from-json /tmp/rt.json
@@ -145,6 +156,7 @@ Live Bitkub / BNTH / arb: env gates are documented only; `--live` paths **hard-r
 - No tips; no invented prices, PnL, or FX.
 - Secrets only via env (see `.env.example`); never commit real keys.
 - **Never** label `api.binance.com` as Binance TH.
+- **Never** sign/send Solana txs; Jupiter path is quote-only (no taker).
 
 ## Prove
 
@@ -156,6 +168,7 @@ python scripts/pmm_tape.py --all --divergence
 python scripts/pmm_bitkub_paper.py --stake-thb 50 --no-record
 python scripts/pmm_arb_scan.py --paper --fixture --allow-fixture --usdthb 36.0 --usdthb-source prove
 python scripts/pmm_basis_scan.py --paper --prices-only
+python scripts/pmm_sol_tape.py --fixture --allow-fixture
 python scripts/pmm_edge_scorecard.py
 python scripts/pmm_paper_reconcile.py --preview
 ```

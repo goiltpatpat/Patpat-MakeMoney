@@ -428,6 +428,22 @@ def main() -> int:
         else:
             bad(f"missing {label}")
 
+    # Solana / Jupiter research tape (quote-only; no custody)
+    solana_md = ROOT / "docs" / "SOLANA.md"
+    jup = ROOT / "src" / "venues" / "solana" / "jupiter_quotes.py"
+    sol_cli = ROOT / "scripts" / "pmm_sol_tape.py"
+    sol_cex = ROOT / "src" / "venues" / "arb" / "sol_cex.py"
+    for path_, label in (
+        (solana_md, "docs/SOLANA.md"),
+        (jup, "src/venues/solana/jupiter_quotes.py"),
+        (sol_cli, "scripts/pmm_sol_tape.py"),
+        (sol_cex, "src/venues/arb/sol_cex.py"),
+    ):
+        if path_.exists():
+            ok(f"{label} present")
+        else:
+            bad(f"missing {label}")
+
     if basis_mod.exists():
         bt = basis_mod.read_text(encoding="utf-8")
         if "basis_bps" in bt and "api.binance.th" in bt and "unit_mismatch" in bt:
@@ -474,6 +490,60 @@ def main() -> int:
             ok("DESK.md mentions Bitkub<->BNTH basis")
         else:
             bad("DESK.md missing basis monitor note")
+
+    if jup.exists():
+        jt = jup.read_text(encoding="utf-8")
+        if "swap/v2/order" in jt and "taker" in jt.lower() and "NEVER" in jt:
+            ok("jupiter quotes use swap/v2/order quote-only (no taker / never sign)")
+        else:
+            bad("jupiter quotes missing swap/v2/order quote-only posture")
+        if "allow_fixture" in jt and "use_fixture" in jt and "price/v3" in jt:
+            ok("jupiter quotes support explicit fixture + price/v3")
+        else:
+            bad("jupiter quotes missing fixture/price v3 wiring")
+        if "/execute" in jt and "never" not in jt.lower():
+            bad("jupiter quotes appear to wire /execute")
+        else:
+            ok("jupiter quotes do not wire /execute")
+
+    if sol_cli.exists():
+        st = sol_cli.read_text(encoding="utf-8")
+        if "--live" in st and ("REFUSED" in st or "refuse" in st.lower()):
+            ok("pmm_sol_tape hard-refuses --live")
+        else:
+            bad("pmm_sol_tape missing --live refuse")
+        if "--allow-fixture" in st and "gross_vs_net" in st:
+            ok("pmm_sol_tape has allow-fixture + gross_vs_net")
+        else:
+            bad("pmm_sol_tape missing allow-fixture / gross_vs_net")
+
+    if sol_cex.exists():
+        sct = sol_cex.read_text(encoding="utf-8")
+        if "unit_mismatch" in sct and "allow_fixture" in sct:
+            ok("sol_cex stub kills unit_mismatch / fixture like hygiene")
+        else:
+            bad("sol_cex missing unit_mismatch / fixture-kill")
+
+    if solana_md.exists():
+        sm = solana_md.read_text(encoding="utf-8")
+        if "api.jup.ag" in sm and "WITHOUT" in sm.upper() and "custody" in sm.lower():
+            ok("docs/SOLANA.md documents quote-only + no custody")
+        else:
+            bad("docs/SOLANA.md incomplete")
+
+    if holes_md.exists():
+        ht = holes_md.read_text(encoding="utf-8")
+        if "Solana" in ht and ("custody" in ht.lower() or "not wired" in ht.lower()):
+            ok("docs/HOLES.md notes Solana live/custody not wired")
+        else:
+            bad("docs/HOLES.md missing Solana custody hole")
+
+    if apis_md.exists():
+        at3 = apis_md.read_text(encoding="utf-8")
+        if "api.jup.ag" in at3 and "JUPITER_API_KEY" in at3:
+            ok("docs/APIS.md covers Jupiter quote + optional key")
+        else:
+            bad("docs/APIS.md missing Jupiter / JUPITER_API_KEY")
 
 
     # Guard against sibling-stack regressions in entry docs/wrappers
