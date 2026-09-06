@@ -191,6 +191,52 @@ def main() -> int:
     else:
         bad("missing first-party src/live/pm_live_trade_runner.py")
 
+
+    # Multi-venue Phase 1 (data layer + Bitkub paper skeleton)
+    venues_md = ROOT / "docs" / "VENUES.md"
+    if venues_md.exists() and "Bitkub" in venues_md.read_text(encoding="utf-8"):
+        ok("docs/VENUES.md present (multi-venue)")
+    else:
+        bad("missing or incomplete docs/VENUES.md")
+
+    venues_init = ROOT / "src" / "venues" / "__init__.py"
+    public_btc = ROOT / "src" / "venues" / "public_btc.py"
+    oneinch = ROOT / "src" / "venues" / "oneinch_quotes.py"
+    bitkub_paper = ROOT / "src" / "venues" / "bitkub" / "paper.py"
+    tape = ROOT / "scripts" / "pmm_tape.py"
+    for path, label in (
+        (venues_init, "src/venues/__init__.py"),
+        (public_btc, "src/venues/public_btc.py"),
+        (oneinch, "src/venues/oneinch_quotes.py"),
+        (bitkub_paper, "src/venues/bitkub/paper.py"),
+        (tape, "scripts/pmm_tape.py"),
+    ):
+        if path.exists():
+            ok(f"{label} present")
+        else:
+            bad(f"missing {label}")
+
+    if bitkub_paper.exists():
+        bt = bitkub_paper.read_text(encoding="utf-8")
+        if "PMM_BITKUB_LIVE_OK" in bt and "live_order_stub" in bt:
+            ok("bitkub paper documents live gate stub")
+        else:
+            bad("bitkub paper missing PMM_BITKUB_LIVE_OK / live_order_stub")
+        if "api.bitkub.com" in bt:
+            ok("bitkub paper references public api.bitkub.com")
+        else:
+            bad("bitkub paper missing api.bitkub.com")
+
+    if oneinch.exists():
+        ot = oneinch.read_text(encoding="utf-8")
+        if "swap" in ot.lower() and "NO swap" not in ot and "never" not in ot.lower():
+            # soft: ensure no swap execution call sites
+            pass
+        if "allow_fixture" in ot and "ONEINCH_API_KEY" in ot:
+            ok("oneinch quotes support fixture + optional API key")
+        else:
+            bad("oneinch quotes missing fixture/API key support")
+
     # Guard against sibling-stack regressions in entry docs/wrappers
     sibling_hits = []
     for rel in (

@@ -1,6 +1,6 @@
 # Runtime truth — Patpat-MakeMoney
 
-Last aligned: 2026-09-06 (first-party runner + gates; Desktop paper probe verified).
+Last aligned: 2026-09-06 (multi-venue Phase 1 data layer + Bitkub paper skeleton; PM optional).
 
 ## Enforced by `scripts/test_btc_5m_session_exit_sl.py` (always)
 - Resolve active BTC 5m market (`btc-updown-5m-<bucket>`)
@@ -61,3 +61,13 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 - Sole GitHub SoT: https://github.com/goiltpatpat/Patpat-MakeMoney
 
 **Note:** `--skew-gate` alone does not require impulse alignment; use `--enable-gates` for strict `impulse_dir == skew_side == entry_side`.
+
+
+## Multi-venue Phase 1 (data layer)
+- Public BTCUSDT: src/venues/public_btc.py (Binance public HTTP; timeout + clear errors)
+- 1inch read-only: src/venues/oneinch_quotes.py (optional ONEINCH_API_KEY; fixture mode for CI)
+- Bitkub paper skeleton: src/venues/bitkub/paper.py — public ticker + paper fill JSON only
+- CLI brief: scripts/pmm_tape.py
+- Doctrine: docs/VENUES.md (TH: PM blocked/impractical; Bitkub primary execution *candidate*; Kraken/eToro deferred)
+- **No** Bitkub live orders; future live must gate on PMM_BITKUB_LIVE_OK (documented stub only)
+- Polymarket runners remain in-repo but are **non-primary** for multi-venue work

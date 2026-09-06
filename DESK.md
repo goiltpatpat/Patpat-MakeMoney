@@ -1,7 +1,7 @@
 # Patpat-MakeMoney Desk Doctrine
 
 ## Mission
-Turn BTC 5m Polymarket noise into a **falsifiable desk read**, then optionally run this skill **paper-first**. Live execution is a gated exception, never the default.
+Turn BTC tape + venue noise into a **falsifiable desk read**, then optionally run skills **paper-first**. Phase 1 sequence: **public data layer → Bitkub paper skeleton**. Polymarket is optional/non-primary (TH geo). Live execution is a gated exception, never the default.
 
 ## Roles
 - **Ledger (Head):** thinks, assigns, synthesizes, gates live
@@ -39,6 +39,12 @@ Process stop: btc5m_ctl.sh stop (orders and positions require separate handling)
 ## Reality check (runner)
 Enforced today: market slot + time floor + CLOB ask threshold + stronger-side + paper-first ctl/hot/watch.
 Impulse and skew gates are implemented but default off; enable through direct runner flags (see `docs/RUNTIME.md`). Human sign-off remains an operating procedure, not a persisted approval gate.
+
+## Venues (Phase 1)
+- Public BTC tape + optional 1inch research quotes first (scripts/pmm_tape.py)
+- Bitkub = SEC-licensed TH **execution candidate**; paper ticker/fill only until paired probes land
+- Polymarket stays available but demoted; no tips
+- See docs/VENUES.md
 
 ## Hard rules
 - No personalized financial advice

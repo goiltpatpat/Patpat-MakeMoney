@@ -2,7 +2,13 @@
 
 Single source of truth for runners on the team fork.
 
-## Canonical execution path
+## Multi-venue data path (Phase 1)
+- Tape CLI: scripts/pmm_tape.py
+- Venues package: src/venues/ (public BTC, 1inch quotes, Bitkub paper)
+- Venue doctrine: docs/VENUES.md
+- Sequence: data layer → Bitkub paper; Polymarket optional/non-primary
+
+## Canonical execution path (Polymarket skill — optional)
 - Strategy runner (canonical): `scripts/test_btc_5m_session_exit_sl.py`
 - Team entry: `scripts/pmm_ctl.sh`
 - Unified control: `scripts/btc5m_ctl.sh` (paper-first; `--live` to execute) (`start|status|stop|report|logs`)
