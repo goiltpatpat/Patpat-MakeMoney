@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Patpat-MakeMoney threshold watcher — PAPER by default.
+# Pass --live as 5th arg or set PMM_LIVE=1 for real orders.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -13,12 +15,22 @@ THRESHOLD="${1:-0.75}"
 STAKE="${2:-4}"
 SLEEP_SEC="${3:-20}"
 MAX_MIN="${4:-180}"
+MODE_ARG="${5:-}"
+
+LIVE=0
+if [[ "${PMM_LIVE:-0}" == "1" || "$MODE_ARG" == "--live" || "$MODE_ARG" == "--execute" ]]; then
+  LIVE=1
+fi
 
 mkdir -p "$REPO/runtime"
 start_ts=$(date +%s)
 end_ts=$((start_ts + MAX_MIN*60))
 
-echo "[$(date -u +%FT%TZ)] start watch threshold=$THRESHOLD stake=$STAKE sleep=$SLEEP_SEC max_min=$MAX_MIN" | tee -a "$LOG"
+if [[ "$LIVE" -eq 1 ]]; then
+  echo "[$(date -u +%FT%TZ)] WARNING LIVE watch threshold=$THRESHOLD stake=$STAKE" | tee -a "$LOG"
+else
+  echo "[$(date -u +%FT%TZ)] start PAPER watch threshold=$THRESHOLD stake=$STAKE sleep=$SLEEP_SEC max_min=$MAX_MIN" | tee -a "$LOG"
+fi
 
 while true; do
   now=$(date +%s)
@@ -27,7 +39,11 @@ while true; do
     exit 0
   fi
 
-  out=$(cd "$REPO" && .venv/bin/python "$PY" --profile conservative --threshold "$THRESHOLD" --stake-usd "$STAKE" --entry-timeout-min 8 --poll-sec 2 --execute 2>&1 || true)
+  if [[ "$LIVE" -eq 1 ]]; then
+    out=$(cd "$REPO" && .venv/bin/python "$PY" --profile desk --threshold "$THRESHOLD" --stake-usd "$STAKE" --entry-timeout-min 8 --poll-sec 2 --execute 2>&1 || true)
+  else
+    out=$(cd "$REPO" && .venv/bin/python "$PY" --profile desk --threshold "$THRESHOLD" --stake-usd "$STAKE" --entry-timeout-min 8 --poll-sec 2 2>&1 || true)
+  fi
   echo "$out" >> "$LOG"
 
   # if decision enter and runner returned success/matched -> stop

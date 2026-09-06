@@ -135,6 +135,21 @@ def main() -> int:
     else:
         bad("missing scripts/pmm_ctl.sh")
 
+    hot = ROOT / "scripts" / "btc5m_hot.sh"
+    if hot.exists():
+        ht = hot.read_text(encoding="utf-8")
+        if "desk" in ht and "--live" in ht:
+            ok("hot supports desk and --live opt-in")
+        else:
+            bad("hot missing desk/--live paper-first wiring")
+    watch = ROOT / "scripts" / "watch_btc_5m_threshold_and_enter.sh"
+    if watch.exists():
+        wt = watch.read_text(encoding="utf-8")
+        if "LIVE=0" in wt or "PAPER watch" in wt:
+            ok("watch is paper-first gated")
+        else:
+            bad("watch still looks live-hardcoded")
+
     print("---")
     print(f"passed={len(PASSES)} failed={len(FAILS)}")
     return 1 if FAILS else 0
