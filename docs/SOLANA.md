@@ -172,3 +172,31 @@ python scripts/pmm_lst_basis_scan.py --paper --fixture --allow-fixture --prices-
 python scripts/pmm_lst_basis_scan.py --live   # exit 2 REFUSED
 `
 
+
+## Jupiter quote-dispersion logger (T1-plus)
+
+Paper / read-only **size-ladder dispersion** over Jupiter GET /swap/v2/order (quote-only, no taker):
+
+1. **MVP SoT:** multi-size Jupiter mids (default ladder 0.001 / 0.01 / 0.05 / 0.1 / 0.5 / 1.0 SOL) → dispersion_bps = (max-min)/avg * 1e4 plus adjacent spreads.
+2. **Fee+slip stack:** API eeBps / slippageBps / priority fee when present; else labeled **ESTIMATE**.
+3. **Optional pool RO mids:** best-effort Raydium / Orca / Meteora public probes. If blocked or unparsed → status deferred (**no invented mids**). Jupiter size-ladder remains SoT.
+
+- Fixture-kill default; --live hard-refuse (exit 2).
+- Fail-closed on empty / rate-limit — never invent mids.
+- Thesis path: --snaps 20 --fixture --allow-fixture offline; Ledger JSONL via --log.
+- No tips, secrets, or auto-trade.
+
+`
+src/venues/solana/quote_dispersion.py
+scripts/pmm_quote_dispersion.py
+tests/test_quote_dispersion.py
+`
+
+`ash
+python scripts/pmm_quote_dispersion.py --paper --prices-only
+python scripts/pmm_quote_dispersion.py --paper --fixture --allow-fixture --no-pools --snaps 20 --log
+python scripts/pmm_quote_dispersion.py --live   # exit 2 REFUSED
+`
+
+**Deferred:** independent Raydium/Orca/Meteora pool mid extraction may remain deferred when venue APIs block or lack a clear SOL/USDC mid field; documented in Ledger pool_mids_policy.
+

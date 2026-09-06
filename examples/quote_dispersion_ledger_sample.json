@@ -1,0 +1,229 @@
+{
+  "execution": "scan_only",
+  "input_mint": "So11111111111111111111111111111111111111112",
+  "kill": false,
+  "kill_reason": null,
+  "lane": "jupiter_quote_dispersion",
+  "latest": {
+    "fee_slip_stack": {
+      "fee_bps": 2.0,
+      "fee_bps_label": "API_feeBps",
+      "fee_floor_bps": 2.0,
+      "note": "fee/slip from Jupiter API when present; else ESTIMATE defaults \u2014 not a tipster",
+      "price_impact_pct": 5e-05,
+      "prioritization_fee_label": "ESTIMATE_unavailable_fixture",
+      "prioritization_fee_lamports": null,
+      "slippage_bps": 50,
+      "slippage_bps_label": "API_slippageBps"
+    },
+    "jupiter_vs_pools": {
+      "comparisons": {
+        "meteora": {
+          "dispersion_bps": null,
+          "note": "pool mid unavailable",
+          "pool_mid": null,
+          "status": "skipped"
+        },
+        "orca": {
+          "dispersion_bps": null,
+          "note": "pool mid unavailable",
+          "pool_mid": null,
+          "status": "skipped"
+        },
+        "raydium": {
+          "dispersion_bps": null,
+          "note": "pool mid unavailable",
+          "pool_mid": null,
+          "status": "skipped"
+        }
+      },
+      "note": "Jupiter vs pool RO mids where available; deferred venues omitted from edge claims",
+      "status": "deferred"
+    },
+    "kill": false,
+    "kill_reason": null,
+    "pools": {
+      "meteora": {
+        "mid": null,
+        "status": "skipped",
+        "venue": "meteora"
+      },
+      "orca": {
+        "mid": null,
+        "status": "skipped",
+        "venue": "orca"
+      },
+      "raydium": {
+        "mid": null,
+        "status": "skipped",
+        "venue": "raydium"
+      }
+    },
+    "quotes": [
+      {
+        "fee_bps": 2.0,
+        "fixture": true,
+        "in_amount": "1000000",
+        "in_ui": 0.001,
+        "input_mint": "So11111111111111111111111111111111111111112",
+        "mid": 149.99992500000002,
+        "note": "FIXTURE Jupiter size quote \u2014 tests only; never sign/send",
+        "out_amount": "150000",
+        "out_ui": 0.14999992500000003,
+        "output_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "price_impact_pct": 5e-05,
+        "prioritization_fee_label": "ESTIMATE_unavailable_fixture",
+        "prioritization_fee_lamports": null,
+        "route_labels": [
+          "fixture"
+        ],
+        "router": "fixture",
+        "slippage_bps": 50,
+        "source": "fixture",
+        "status": "ok",
+        "symbol": "SOL/USDC",
+        "ts": "2026-09-06T19:24:49Z",
+        "venue": "jupiter_solana"
+      },
+      {
+        "fee_bps": 2.0,
+        "fixture": true,
+        "in_amount": "10000000",
+        "in_ui": 0.01,
+        "input_mint": "So11111111111111111111111111111111111111112",
+        "mid": 149.99925,
+        "note": "FIXTURE Jupiter size quote \u2014 tests only; never sign/send",
+        "out_amount": "1499992",
+        "out_ui": 1.4999924999999998,
+        "output_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "price_impact_pct": 0.0005,
+        "prioritization_fee_label": "ESTIMATE_unavailable_fixture",
+        "prioritization_fee_lamports": null,
+        "route_labels": [
+          "fixture"
+        ],
+        "router": "fixture",
+        "slippage_bps": 50,
+        "source": "fixture",
+        "status": "ok",
+        "symbol": "SOL/USDC",
+        "ts": "2026-09-06T19:24:49Z",
+        "venue": "jupiter_solana"
+      },
+      {
+        "fee_bps": 2.0,
+        "fixture": true,
+        "in_amount": "100000000",
+        "in_ui": 0.1,
+        "input_mint": "So11111111111111111111111111111111111111112",
+        "mid": 149.9925,
+        "note": "FIXTURE Jupiter size quote \u2014 tests only; never sign/send",
+        "out_amount": "14999250",
+        "out_ui": 14.999250000000002,
+        "output_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "price_impact_pct": 0.005,
+        "prioritization_fee_label": "ESTIMATE_unavailable_fixture",
+        "prioritization_fee_lamports": null,
+        "route_labels": [
+          "fixture"
+        ],
+        "router": "fixture",
+        "slippage_bps": 50,
+        "source": "fixture",
+        "status": "ok",
+        "symbol": "SOL/USDC",
+        "ts": "2026-09-06T19:24:49Z",
+        "venue": "jupiter_solana"
+      }
+    ],
+    "size_dispersion": {
+      "adjacent": [
+        {
+          "adj_spread_bps": -0.04500012375230786,
+          "from_amount": "1000000",
+          "from_mid": 149.99992500000002,
+          "to_amount": "10000000",
+          "to_mid": 149.99925
+        },
+        {
+          "adj_spread_bps": -0.4500123753391546,
+          "from_amount": "10000000",
+          "from_mid": 149.99925,
+          "to_amount": "100000000",
+          "to_mid": 149.9925
+        }
+      ],
+      "avg_mid": 149.997225,
+      "dispersion_bps": 0.49500915767021725,
+      "kill": false,
+      "kill_reason": null,
+      "max_mid": 149.99992500000002,
+      "min_mid": 149.9925,
+      "n_ok": 3,
+      "n_total": 3,
+      "note": "Jupiter multi-size dispersion: (max_mid-min_mid)/avg_mid * 1e4; size ladder quote-only; research tape",
+      "spread_max_min_bps": 0.49500915767021725,
+      "status": "ok"
+    },
+    "snap": 20,
+    "ts": "2026-09-06T19:24:49Z"
+  },
+  "live": false,
+  "mode": "paper",
+  "note": "Research/dry-run only. Fail-closed on empty/rate-limit. Pool mids may be deferred \u2014 see pool_mids_policy.",
+  "output_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "pair": "SOL/USDC",
+  "pool_mids_policy": "Raydium/Orca/Meteora RO mids best-effort; deferred when blocked/unparsed; never invent; Jupiter multi-size dispersion is MVP SoT",
+  "sample0_dispersion": {
+    "adjacent": [
+      {
+        "adj_spread_bps": -0.04500012375230786,
+        "from_amount": "1000000",
+        "from_mid": 149.99992500000002,
+        "to_amount": "10000000",
+        "to_mid": 149.99925
+      },
+      {
+        "adj_spread_bps": -0.4500123753391546,
+        "from_amount": "10000000",
+        "from_mid": 149.99925,
+        "to_amount": "100000000",
+        "to_mid": 149.9925
+      }
+    ],
+    "avg_mid": 149.997225,
+    "dispersion_bps": 0.49500915767021725,
+    "kill": false,
+    "kill_reason": null,
+    "max_mid": 149.99992500000002,
+    "min_mid": 149.9925,
+    "n_ok": 3,
+    "n_total": 3,
+    "note": "Jupiter multi-size dispersion: (max_mid-min_mid)/avg_mid * 1e4; size ladder quote-only; research tape",
+    "spread_max_min_bps": 0.49500915767021725,
+    "status": "ok"
+  },
+  "sample0_fee_slip": {
+    "fee_bps": 2.0,
+    "fee_bps_label": "API_feeBps",
+    "fee_floor_bps": 2.0,
+    "note": "fee/slip from Jupiter API when present; else ESTIMATE defaults \u2014 not a tipster",
+    "price_impact_pct": 5e-05,
+    "prioritization_fee_label": "ESTIMATE_unavailable_fixture",
+    "prioritization_fee_lamports": null,
+    "slippage_bps": 50,
+    "slippage_bps_label": "API_slippageBps"
+  },
+  "samples_count": 20,
+  "size_ladder_lamports": [
+    "1000000",
+    "10000000",
+    "100000000"
+  ],
+  "snaps": 20,
+  "snaps_ok": 20,
+  "soft_flags": [],
+  "status": "ok",
+  "thesis": "T1-plus Jupiter quote-dispersion: size-ladder mids + fee/slip stack; optional pool RO compare; fixture-kill; --live refuse; no tips/auto-trade",
+  "ts": "2026-09-06T19:24:49Z"
+}

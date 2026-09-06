@@ -114,3 +114,6 @@ All three stay paper/read-only until Thesis pass criteria are met.
 - CLI: `scripts/pmm_lst_basis_scan.py` (`--live` refuse; fixture-kill; labeled ESTIMATE bps).
 - Mints: mSOL `mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So`, jitoSOL `J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn`.
 
+## Jupiter quote-dispersion
+
+See scripts/pmm_quote_dispersion.py / src/venues/solana/quote_dispersion.py.

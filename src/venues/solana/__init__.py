@@ -16,6 +16,11 @@ from venues.solana.jupiter_quotes import (
     fetch_jupiter_usd_price,
     fixture_sol_usdc_quote,
 )
+from venues.solana.quote_dispersion import (
+    DEFAULT_SIZE_LADDER_LAMPORTS,
+    DispersionError,
+    scan_quote_dispersion,
+)
 from venues.solana.paper import (
     VENUE as SOLANA_PAPER_VENUE,
     SolanaPaperError,
@@ -38,6 +43,9 @@ __all__ = [
     "fetch_desk_balance",
     "fetch_jupiter_order_quote",
     "fetch_jupiter_usd_price",
+    "DEFAULT_SIZE_LADDER_LAMPORTS",
+    "DispersionError",
+    "scan_quote_dispersion",
     "fixture_sol_usdc_quote",
     "paper_batch_fills",
     "paper_fill_from_quote",
