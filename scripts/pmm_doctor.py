@@ -731,6 +731,71 @@ def main() -> int:
             bad("docs/APIS.md missing LST basis note")
 
 
+
+    # Jupiter quote-dispersion logger (T1-plus) — paper/RO
+    qd_mod = ROOT / "src" / "venues" / "solana" / "quote_dispersion.py"
+    qd_cli = ROOT / "scripts" / "pmm_quote_dispersion.py"
+    for path, label in (
+        (qd_mod, "src/venues/solana/quote_dispersion.py"),
+        (qd_cli, "scripts/pmm_quote_dispersion.py"),
+    ):
+        if path.exists():
+            ok(f"{label} present")
+        else:
+            bad(f"{label} missing")
+
+    if qd_mod.exists():
+        qt = qd_mod.read_text(encoding="utf-8")
+        if "DEFAULT_SIZE_LADDER_LAMPORTS" in qt and "scan_quote_dispersion" in qt:
+            ok("quote_dispersion has size ladder + scan")
+        else:
+            bad("quote_dispersion missing size ladder / scan")
+        if "money_leg_source_fixture" in qt and "rate_limit" in qt and "no invented" in qt.lower():
+            ok("quote_dispersion has fixture-kill + rate_limit fail-closed")
+        else:
+            bad("quote_dispersion missing fixture-kill / fail-closed")
+        if "deferred" in qt and ("raydium" in qt.lower() or "Raydium" in qt):
+            ok("quote_dispersion documents deferred pool mids (Raydium/Orca/Meteora)")
+        else:
+            bad("quote_dispersion missing deferred pool mid policy")
+
+    if qd_cli.exists():
+        qct = qd_cli.read_text(encoding="utf-8")
+        if "--live" in qct and "REFUSED" in qct and "return 2" in qct:
+            ok("pmm_quote_dispersion hard-refuses --live")
+        else:
+            bad("pmm_quote_dispersion missing --live refuse")
+        if "--allow-fixture" in qct and ("ESTIMATE" in qct or "fee" in qct.lower()):
+            ok("pmm_quote_dispersion has allow-fixture / fee-slip path")
+        else:
+            bad("pmm_quote_dispersion missing allow-fixture")
+        if "tip" in qct.lower() or "auto-trade" in qct.lower():
+            ok("pmm_quote_dispersion documents no tips/auto-trade")
+        else:
+            bad("pmm_quote_dispersion missing no-tips note")
+
+    if solana_md.exists():
+        sm4 = solana_md.read_text(encoding="utf-8")
+        if "pmm_quote_dispersion" in sm4 or "quote-dispersion" in sm4 or "quote_dispersion" in sm4:
+            ok("docs/SOLANA.md covers quote-dispersion")
+        else:
+            bad("docs/SOLANA.md missing quote-dispersion note")
+
+    if venues_md.exists():
+        vt5 = venues_md.read_text(encoding="utf-8")
+        if "quote_dispersion" in vt5 or "pmm_quote_dispersion" in vt5 or "quote-dispersion" in vt5:
+            ok("docs/VENUES.md covers quote-dispersion")
+        else:
+            bad("docs/VENUES.md missing quote-dispersion note")
+
+    if apis_md.exists():
+        at6 = apis_md.read_text(encoding="utf-8")
+        if "pmm_quote_dispersion" in at6 or "quote-dispersion" in at6 or "quote_dispersion" in at6:
+            ok("docs/APIS.md mentions quote-dispersion")
+        else:
+            bad("docs/APIS.md missing quote-dispersion note")
+
+
     # Guard against sibling-stack regressions in entry docs/wrappers
     sibling_hits = []
     for rel in (
