@@ -44,8 +44,15 @@ Enable with `--enable-gates` or `--impulse-gate` / `--skew-gate`.
 - `btc5m_ctl.sh stop` kills the runner process only; it does not cancel orders or close positions.
 - The force-close path creates an authenticated client and can cancel token orders without a local `args.execute` check. Reposting does not require cancellation success. External response contracts and these paths require a separate safety review before relying on paper/live isolation.
 
+## External execution stack
+- Team fork: `https://github.com/goiltpatpat/pm-hl-conservative-plus-repo` (from Novals83/polymarket-hl-strategy)
+- Default local path: `BTC5M_REPO` / sibling `pm-hl-conservative-plus-repo` under the workspace parent (`~/pm-hl-conservative-plus-repo` on this desk)
+- Desk patch: runner accepts `--force-side UP|DOWN` so Patpat-MakeMoney owns entry side (HL signal is advisory when force-side is set)
+- Paper still invokes this stack on every `run_open` / `run_close`; `--execute` only toggles live
+
 ## External / unverified
-- Sibling `pm-hl-conservative-plus-repo` presence and dry-mode contract
+- End-to-end paper A/B of gate ON vs OFF in a live 5m window; dry JSON fill vs monitor-loop behavior
 - End-to-end paper A/B of gate ON vs OFF in a live 5m window
 
 **Note:** `--skew-gate` alone does not require impulse alignment; use `--enable-gates` for strict `impulse_dir == skew_side == entry_side`.
+

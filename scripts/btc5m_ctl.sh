@@ -90,6 +90,7 @@ cmd_start() {
   [[ -n "$threshold" ]] && runner_cmd+=("--threshold" "$threshold")
 
   (
+    export PYTHONUNBUFFERED=1
     if [[ -f "$ENV_FILE" ]]; then
       set -a
       # shellcheck disable=SC1090
